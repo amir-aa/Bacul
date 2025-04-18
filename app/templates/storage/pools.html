@@ -1,0 +1,72 @@
+<!-- app/templates/storage/pools.html -->
+{% extends 'base.html' %}
+
+{% block title %}Media Pools - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Media Pools</h1>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Media Pools</h6>
+            <div>
+                <a href="{{ url_for('storage.add_pool') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Add Pool
+                </a>
+                <a href="{{ url_for('storage.label_volume') }}" class="btn btn-success btn-sm ml-2">
+                    <i class="fas fa-tag"></i> Label Volume
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="poolsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Volumes</th>
+                            <th>Max Volumes</th>
+                            <th>Available Volumes</th>
+                            <th>Total Size</th>
+                            <th>Recycle</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pool in pools %}
+                        <tr>
+                            <td>{{ pool.name }}</td>
+                            <td>{{ pool_stats[pool.poolid]['total_volumes'] }}</td>
+                            <td>{{ pool.maxvols }}</td>
+                            <td>{{ pool_stats[pool.poolid]['available_volumes'] }}</td>
+                            <td>{{ (pool_stats[pool.poolid]['total_bytes'] / 1024 / 1024 / 1024)|round(2) }} GB</td>
+                            <td>
+                                {% if pool.recycle %}
+                                <span class="badge badge-success">Yes</span>
+                                {% else %}
+                                <span class="badge badge-danger">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('storage.pool_volumes', pool_id=pool.poolid) }}" class="btn btn-info btn-sm">
+                                    <i class="fas fa-database"></i> Volumes
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#poolsTable').DataTable();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,198 @@
+<!-- app/templates/settings/users/settings.html -->
+{% extends 'base.html' %}
+
+{% block title %}User Settings - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+ <h1 class="h3 mb-4 text-gray-800">User Settings</h1>
+
+ <div class="row">
+ <div class="col-lg-3">
+ <!-- Settings Navigation -->
+ <div class="card shadow mb-4">
+ <div class="card-header py-3">
+ <h6 class="m-0 font-weight-bold text-primary">Settings Menu</h6>
+ </div>
+ <div class="card-body p-0">
+ <div class="list-group list-group-flush">
+ <a href="{{ url_for('settings.general') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-cog fa-fw mr-2"></i> General
+ </a>
+ <a href="{{ url_for('settings.email') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-envelope fa-fw mr-2"></i> Email
+ </a>
+ <a href="{{ url_for('settings.backup') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-save fa-fw mr-2"></i> Backup
+ </a>
+ <a href="{{ url_for('settings.restore') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-undo fa-fw mr-2"></i> Restore
+ </a>
+ <a href="{{ url_for('settings.director') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-server fa-fw mr-2"></i> Director
+ </a>
+ <a href="{{ url_for('settings.security') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-lock fa-fw mr-2"></i> Security
+ </a>
+ <a href="{{ url_for('settings.users') }}" class="list-group-item list-group-item-action active">
+ <i class="fas fa-users fa-fw mr-2"></i> Users
+ </a>
+ <div class="dropdown-divider"></div>
+ <a href="{{ url_for('settings.export') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-file-export fa-fw mr-2"></i> Export Settings
+ </a>
+ <a href="{{ url_for('settings.import_settings') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-file-import fa-fw mr-2"></i> Import Settings
+ </a>
+ </div>
+ </div>
+ </div>
+ 
+ <!-- User Management Navigation -->
+ <div class="card shadow mb-4">
+ <div class="card-header py-3">
+ <h6 class="m-0 font-weight-bold text-primary">User Management</h6>
+ </div>
+ <div class="card-body p-0">
+ <div class="list-group list-group-flush">
+ <a href="{{ url_for('settings.users') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-user fa-fw mr-2"></i> Users
+ </a>
+ <a href="{{ url_for('settings.roles') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-user-tag fa-fw mr-2"></i> Roles
+ </a>
+ <a href="{{ url_for('settings.users_settings') }}" class="list-group-item list-group-item-action active">
+ <i class="fas fa-user-cog fa-fw mr-2"></i> User Settings
+ </a>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <div class="col-lg-9">
+ <!-- User Settings Card -->
+ <div class="card shadow mb-4">
+ <div class="card-header py-3">
+ <h6 class="m-0 font-weight-bold text-primary">User Settings</h6>
+ </div>
+ <div class="card-body">
+ {% with messages = get_flashed_messages(with_categories=true) %}
+ {% if messages %}
+ {% for category, message in messages %}
+ <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+ {{ message }}
+ <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+ </div>
+ {% endfor %}
+ {% endif %}
+ {% endwith %}
+
+ <form method="post" action="{{ url_for('settings.users_settings') }}">
+ <div class="mb-4">
+ <h5>Account Settings</h5>
+ <div class="row mb-3">
+ <div class="col-md-6">
+ <div class="form-check">
+ <input class="form-check-input" type="checkbox" id="require_email_verification" name="require_email_verification" {% if settings.users.require_email_verification %}checked{% endif %}>
+ <label class="form-check-label" for="require_email_verification">
+ Require Email Verification
+ </label>
+ <div class="form-text">New users must verify their email address before logging in.</div>
+ </div>
+ </div>
+ <div class="col-md-6">
+ <label for="default_role" class="form-label">Default Role for New Users</label>
+ <select class="form-select" id="default_role" name="default_role">
+ {% for role in roles %}
+ <option value="{{ role.name }}" {% if settings.users.default_role == role.name %}selected{% endif %}>{{ role.name }}</option>
+ {% endfor %}
+ </select>
+ <div class="form-text">Role assigned to newly registered users.</div>
+ </div>
+ </div>
+ </div>
+
+ <div class="mb-4">
+ <h5>Password Policy</h5>
+ <div class="row mb-3">
+ <div class="col-md-6">
+ <label for="min_length" class="form-label">Minimum Password Length</label>
+ <input type="number" class="form-control" id="min_length" name="min_length" value="{{ settings.users.password_policy.min_length }}" min="6">
+ <div class="form-text">Minimum number of characters required for passwords.</div>
+ </div>
+ </div>
+
+ <div class="row mb-3">
+ <div class="col-md-6">
+ <div class="form-check">
+ <input class="form-check-input" type="checkbox" id="require_uppercase" name="require_uppercase" {% if settings.users.password_policy.require_uppercase %}checked{% endif %}>
+ <label class="form-check-label" for="require_uppercase">
+ Require Uppercase Letters
+ </label>
+ </div>
+ </div>
+ <div class="col-md-6">
+ <div class="form-check">
+ <input class="form-check-input" type="checkbox" id="require_lowercase" name="require_lowercase" {% if settings.users.password_policy.require_lowercase %}checked{% endif %}>
+ <label class="form-check-label" for="require_lowercase">
+ Require Lowercase Letters
+ </label>
+ </div>
+ </div>
+ </div>
+
+ <div class="row mb-3">
+ <div class="col-md-6">
+ <div class="form-check">
+ <input class="form-check-input" type="checkbox" id="require_numbers" name="require_numbers" {% if settings.users.password_policy.require_numbers %}checked{% endif %}>
+ <label class="form-check-label" for="require_numbers">
+ Require Numbers
+ </label>
+ </div>
+ </div>
+ <div class="col-md-6">
+ <div class="form-check">
+ <input class="form-check-input" type="checkbox" id="require_special" name="require_special" {% if settings.users.password_policy.require_special %}checked{% endif %}>
+ <label class="form-check-label" for="require_special">
+ Require Special Characters
+ </label>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <div class="mb-4">
+ <h5>Security Settings</h5>
+ <div class="row mb-3">
+ <div class="col-md-6">
+ <label for="session_timeout" class="form-label">Session Timeout (minutes)</label>
+ <input type="number" class="form-control" id="session_timeout" name="session_timeout" value="{{ settings.users.session_timeout }}" min="5">
+ <div class="form-text">Time before an inactive session expires.</div>
+ </div>
+ <div class="col-md-6">
+ <label for="max_login_attempts" class="form-label">Maximum Login Attempts</label>
+ <input type="number" class="form-control" id="max_login_attempts" name="max_login_attempts" value="{{ settings.users.max_login_attempts }}" min="1">
+ <div class="form-text">Number of failed login attempts before account is locked.</div>
+ </div>
+ </div>
+
+ <div class="row mb-3">
+ <div class="col-md-6">
+ <label for="lockout_duration" class="form-label">Account Lockout Duration (minutes)</label>
+ <input type="number" class="form-control" id="lockout_duration" name="lockout_duration" value="{{ settings.users.lockout_duration }}" min="1">
+ <div class="form-text">Time an account remains locked after too many failed login attempts.</div>
+ </div>
+ </div>
+ </div>
+
+ <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+ <button type="reset" class="btn btn-secondary me-md-2">Reset</button>
+ <button type="submit" class="btn btn-primary">Save Settings</button>
+ </div>
+ </form>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+{% endblock %}

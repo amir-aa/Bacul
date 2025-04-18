@@ -1,0 +1,117 @@
+<!-- app/templates/volumes/add_volume.html -->
+{% extends 'base.html' %}
+
+{% block title %}Add Volume - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Add New Volume</h1>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Volume Configuration</h6>
+                    <div>
+                        <a href="{{ url_for('volumes.index') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Back to Volumes
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="post" action="{{ url_for('volumes.add_volume_post') }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Volume Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" required placeholder="e.g., Backup-001">
+                                <div class="form-text">Name of the volume, must be unique.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="pool_id" class="form-label">Pool <span class="text-danger">*</span></label>
+                                <select class="form-select" id="pool_id" name="pool_id" required>
+                                    {% for pool in pools %}
+                                    <option value="{{ pool.poolid }}">{{ pool.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Pool this volume will belong to.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="storage_id" class="form-label">Storage <span class="text-danger">*</span></label>
+                                <select class="form-select" id="storage_id" name="storage_id" required>
+                                    {% for storage in storages %}
+                                    <option value="{{ storage.storageid }}">{{ storage.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Storage device where this volume will be created.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="slot" class="form-label">Slot</label>
+                                <input type="number" class="form-control" id="slot" name="slot" value="0" min="0">
+                                <div class="form-text">Slot number (for tape libraries).</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="enabled" name="enabled" checked>
+                                <label class="form-check-label" for="enabled">
+                                    Enabled
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="reset" class="btn btn-secondary me-md-2">Reset</button>
+                            <button type="submit" class="btn btn-primary">Create Volume</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Volume Information</h6>
+                </div>
+                <div class="card-body">
+                    <p>Volumes are the media where backup data is stored. Each volume belongs to a specific pool and is stored on a storage device.</p>
+                    
+                    <h6 class="font-weight-bold">Volume Naming:</h6>
+                    <ul>
+                        <li>Volume names must be unique within Bacula</li>
+                        <li>Use descriptive names that identify the pool and purpose</li>
+                        <li>Sequential numbering helps with organization</li>
+                    </ul>
+                    
+                    <h6 class="font-weight-bold">Best Practices:</h6>
+                    <ul>
+                        <li>Create volumes in advance for backup jobs</li>
+                        <li>Monitor volume usage to prevent running out of space</li>
+                        <li>For tape libraries, verify slot numbers</li>
+                        <li>Use the label format defined in the pool configuration</li>
+                    </ul>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle"></i> This will create and label a new volume in Bacula.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

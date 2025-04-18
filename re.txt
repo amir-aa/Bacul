@@ -1,0 +1,7 @@
+# requirements.txt
+Flask==2.3.3
+peewee==3.16.3
+flask-login==0.6.2
+psycopg2-binary==2.9.7
+Werkzeug==2.3.7
+python-dotenv==1.0.0

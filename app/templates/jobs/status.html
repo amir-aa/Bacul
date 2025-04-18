@@ -1,0 +1,320 @@
+<!-- app/templates/jobs/status.html -->
+{% extends 'base.html' %}
+
+{% block title %}Job Status - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Job Details</h1>
+    
+    <!-- Job Info Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Job #{{ job.jobid }}: {{ job.name }}</h6>
+            <div>
+                {% if job.jobstatus == 'R' %}
+                <button class="btn btn-danger btn-sm cancel-job" data-jobid="{{ job.jobid }}">
+                    <i class="fas fa-stop"></i> Cancel Job
+                </button>
+                {% endif %}
+                <a href="{{ url_for('jobs.index') }}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Back to Jobs
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>Job ID</th>
+                            <td>{{ job.jobid }}</td>
+                        </tr>
+                        <tr>
+                            <th>Name</th>
+                            <td>{{ job.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Client</th>
+                            <td>{{ client_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Type</th>
+                            <td>{{ job.type }}</td>
+                        </tr>
+                        <tr>
+                            <th>Level</th>
+                            <td>
+                                {% if job.level == 'F' %}
+                                <span class="badge bg-primary">Full</span>
+                                {% elif job.level == 'I' %}
+                                <span class="badge bg-success">Incremental</span>
+                                {% elif job.level == 'D' %}
+                                <span class="badge bg-info">Differential</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ job.level }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>Status</th>
+                            <td>
+                                {% if job.jobstatus == 'T' %}
+                                <span class="badge bg-success">Success</span>
+                                {% elif job.jobstatus == 'E' %}
+                                <span class="badge bg-danger">Error</span>
+                                {% elif job.jobstatus == 'R' %}
+                                <span class="badge bg-info">Running</span>
+                                {% elif job.jobstatus == 'C' %}
+                                <span class="badge bg-warning">Created</span>
+                                {% elif job.jobstatus == 'A' %}
+                                <span class="badge bg-secondary">Canceled</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ job.jobstatus }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Start Time</th>
+                            <td>{{ job.starttime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                        <tr>
+                            <th>End Time</th>
+                            <td>
+                                {% if job.endtime %}
+                                {{ job.endtime.strftime('%Y-%m-%d %H:%M:%S') }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Duration</th>
+                            <td>
+                                {% if job.endtime and job.starttime %}
+                                {{ format_duration(job.endtime - job.starttime) }}
+                                {% elif job.starttime %}
+                                Running for {{ format_duration(now() - job.starttime) }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Files</th>
+                            <td>{{ job.jobfiles }}</td>
+                        </tr>
+                        <tr>
+                            <th>Size</th>
+                            <td>{{ format_bytes(job.jobbytes) }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Job Status Output -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Job Status</h6>
+        </div>
+        <div class="card-body">
+            <pre class="bg-light p-3" style="max-height: 300px; overflow-y: auto;">{{ status_output }}</pre>
+        </div>
+    </div>
+    
+    <!-- Job Log Output -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Job Log</h6>
+        </div>
+        <div class="card-body">
+            <pre class="bg-light p-3" style="max-height: 400px; overflow-y: auto;">{{ log_output }}</pre>
+        </div>
+    </div>
+    
+    <!-- Actions -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Job Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if job.jobstatus == 'T' %}
+                        <a href="{{ url_for('restore.index') }}?jobid={{ job.jobid }}" class="btn btn-success">
+                            <i class="fas fa-undo"></i> Restore Files from this Job
+                        </a>
+                        <button class="btn btn-primary run-again" data-jobname="{{ job.name }}" data-client="{{ client_name }}">
+                            <i class="fas fa-redo"></i> Run this Job Again
+                        </button>
+                        {% endif %}
+                        
+                        {% if job.jobstatus == 'E' %}
+                        <button class="btn btn-warning view-errors">
+                            <i class="fas fa-exclamation-triangle"></i> Analyze Errors
+                        </button>
+                        <button class="btn btn-primary run-again" data-jobname="{{ job.name }}" data-client="{{ client_name }}">
+                            <i class="fas fa-redo"></i> Run this Job Again
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Related Jobs</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="relatedJobsTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Job ID</th>
+                                    <th>Date</th>
+                                    <th>Level</th>
+                                    <th>Status</th>
+                                    <th>Size</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- This would be populated with actual related jobs in a real application -->
+                                <tr>
+                                    <td colspan="6" class="text-center">No related jobs found</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Run Job Modal -->
+<div class="modal fade" id="runJobModal" tabindex="-1" aria-labelledby="runJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="runJobModalLabel">Run Job Again</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="runJobForm" method="post" action="{{ url_for('jobs.run_job') }}">
+                    <input type="hidden" id="job_name" name="job_name" value="{{ job.name }}">
+                    <input type="hidden" id="client_name" name="client_name" value="{{ client_name }}">
+                    
+                    <div class="mb-3">
+                        <label for="level" class="form-label">Backup Level</label>
+                        <select class="form-select" id="level" name="level">
+                            <option value="Incremental">Incremental</option>
+                            <option value="Differential">Differential</option>
+                            <option value="Full">Full</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">Priority</label>
+                        <select class="form-select" id="priority" name="priority">
+                            <option value="10">Normal (10)</option>
+                            <option value="5">Low (5)</option>
+                            <option value="15">High (15)</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="runJobForm" class="btn btn-primary">Run Job</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Cancel Job button
+    document.querySelectorAll('.cancel-job').forEach(button => {
+        button.addEventListener('click', function() {
+            const jobId = this.getAttribute('data-jobid');
+            if (confirm('Are you sure you want to cancel this job?')) {
+                fetch(`/jobs/${jobId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Job cancelled successfully');
+                        location.reload();
+                    } else {
+                        alert('Error cancelling job: ' + data.message);
+                    }
+                });
+            }
+        });
+    });
+    
+    // Run Again button
+    document.querySelectorAll('.run-again').forEach(button => {
+        button.addEventListener('click', function() {
+            const runJobModal = new bootstrap.Modal(document.getElementById('runJobModal'));
+            runJobModal.show();
+        });
+    });
+    
+    // View Errors button
+    document.querySelectorAll('.view-errors').forEach(button => {
+        button.addEventListener('click', function() {
+            // In a real app, this would show a modal with error analysis
+            alert('Error analysis would be shown here in a real application');
+        });
+    });
+    
+    // Auto-refresh if job is running
+    {% if job.jobstatus == 'R' %}
+    const refreshInterval = setInterval(function() {
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Update status output
+                const statusOutput = doc.querySelector('.card-body pre:first-of-type');
+                if (statusOutput) {
+                    document.querySelector('.card-body pre:first-of-type').innerHTML = statusOutput.innerHTML;
+                }
+                
+                // Update log output
+                const logOutput = doc.querySelector('.card-body pre:last-of-type');
+                if (logOutput) {
+                    document.querySelector('.card-body pre:last-of-type').innerHTML = logOutput.innerHTML;
+                }
+                
+                // Check if job is still running
+                const jobStatus = doc.querySelector('span.badge').textContent;
+                if (jobStatus !== 'Running') {
+                    clearInterval(refreshInterval);
+                    location.reload();
+                }
+            });
+    }, 10000); // Refresh every 10 seconds
+    {% endif %}
+});
+</script>
+{% endblock %}

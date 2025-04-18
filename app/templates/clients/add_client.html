@@ -1,0 +1,289 @@
+<!-- app/templates/clients/add_client.html -->
+{% extends 'base.html' %}
+
+{% block title %}Add New Client - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Add New Backup Client</h1>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Client Information</h6>
+            <a href="{{ url_for('clients.index') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Back to Clients
+            </a>
+        </div>
+        <div class="card-body">
+            <form method="post" id="addClientForm">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Client Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                            <small class="text-muted">Unique identifier for this client (e.g., server1-fd)</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <input type="text" class="form-control" id="address" name="address" required>
+                            <small class="text-muted">IP address or hostname</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="fdport" class="form-label">FD Port</label>
+                            <input type="number" class="form-control" id="fdport" name="fdport" value="9102">
+                            <small class="text-muted">File Daemon port (default: 9102)</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="catalog" class="form-label">Catalog</label>
+                            <select class="form-select" id="catalog" name="catalog">
+                                <option value="MyCatalog">MyCatalog</option>
+                                <!-- Additional catalogs would be listed here -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="password" name="password" required>
+                                <button class="btn btn-outline-secondary" type="button" id="showPassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted">Password for File Daemon connection</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="file_retention" class="form-label">File Retention</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="file_retention" name="file_retention" value="60">
+                                <span class="input-group-text">days</span>
+                            </div>
+                            <small class="text-muted">How long to keep file records in catalog</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="job_retention" class="form-label">Job Retention</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="job_retention" name="job_retention" value="180">
+                                <span class="input-group-text">days</span>
+                            </div>
+                            <small class="text-muted">How long to keep job records in catalog</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="autoprune" class="form-label">Auto Prune</label>
+                            <select class="form-select" id="autoprune" name="autoprune">
+                                <option value="yes">Yes</option>
+                                <option value="no">No</option>
+                            </select>
+                            <small class="text-muted">Automatically remove expired records</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    <small class="text-muted">Optional description for this client</small>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="enabled" name="enabled" checked>
+                        <label class="form-check-label" for="enabled">
+                            Client Enabled
+                        </label>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h5>Advanced Options</h5>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="showAdvanced">
+                    <label class="form-check-label" for="showAdvanced">Show Advanced Options</label>
+                </div>
+                
+                <div id="advancedOptions" class="d-none">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="max_concurrent_jobs" class="form-label">Max Concurrent Jobs</label>
+                                <input type="number" class="form-control" id="max_concurrent_jobs" name="max_concurrent_jobs" value="1">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="heartbeat_interval" class="form-label">Heartbeat Interval</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="heartbeat_interval" name="heartbeat_interval" value="0">
+                                    <span class="input-group-text">seconds</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tls_enable" class="form-label">TLS Enable</label>
+                                <select class="form-select" id="tls_enable" name="tls_enable">
+                                    <option value="no">No</option>
+                                    <option value="yes">Yes</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="tls_require" class="form-label">TLS Require</label>
+                                <select class="form-select" id="tls_require" name="tls_require">
+                                    <option value="no">No</option>
+                                    <option value="yes">Yes</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save"></i> Add Client
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Client Configuration Guide</h6>
+        </div>
+        <div class="card-body">
+            <div class="accordion" id="clientGuideAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                            Linux Client Installation
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#clientGuideAccordion">
+                        <div class="accordion-body">
+                            <pre class="bg-light p-3">
+# Install Bacula File Daemon
+apt-get update
+apt-get install bacula-fd
+
+# Edit configuration file
+vim /etc/bacula/bacula-fd.conf
+
+# Restart service
+systemctl restart bacula-fd
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                            Windows Client Installation
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#clientGuideAccordion">
+                        <div class="accordion-body">
+                            <ol>
+                                <li>Download the Bacula Windows client installer from the official website</li>
+                                <li>Run the installer with administrative privileges</li>
+                                <li>Enter the Director name, address, and password during installation</li>
+                                <li>Verify the service is running in Windows Services</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                            Sample Client Configuration
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#clientGuideAccordion">
+                        <div class="accordion-body">
+                            <pre class="bg-light p-3">
+# Client definition in bacula-dir.conf
+Client {
+  Name = <span id="sample-name">server1-fd</span>
+  Address = <span id="sample-address">192.168.1.100</span>
+  FDPort = <span id="sample-port">9102</span>
+  Catalog = MyCatalog
+  Password = "<span id="sample-password">password</span>"
+  File Retention = <span id="sample-file-retention">60 days</span>
+  Job Retention = <span id="sample-job-retention">180 days</span>
+  AutoPrune = <span id="sample-autoprune">yes</span>
+}
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show/hide password
+    document.getElementById('showPassword').addEventListener('click', function() {
+        const passwordInput = document.getElementById('password');
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            this.innerHTML = '<i class="fas fa-eye-slash"></i>';
+        } else {
+            passwordInput.type = 'password';
+            this.innerHTML = '<i class="fas fa-eye"></i>';
+        }
+    });
+    
+    // Show/hide advanced options
+    document.getElementById('showAdvanced').addEventListener('change', function() {
+        const advancedOptions = document.getElementById('advancedOptions');
+        if (this.checked) {
+            advancedOptions.classList.remove('d-none');
+        } else {
+            advancedOptions.classList.add('d-none');
+        }
+    });
+    
+    // Update sample configuration as user types
+    const updateSampleConfig = function() {
+        document.getElementById('sample-name').textContent = document.getElementById('name').value || 'server1-fd';
+        document.getElementById('sample-address').textContent = document.getElementById('address').value || '192.168.1.100';
+        document.getElementById('sample-port').textContent = document.getElementById('fdport').value || '9102';
+        document.getElementById('sample-password').textContent = document.getElementById('password').value || 'password';
+        document.getElementById('sample-file-retention').textContent = document.getElementById('file_retention').value + ' days' || '60 days';
+        document.getElementById('sample-job-retention').textContent = document.getElementById('job_retention').value + ' days' || '180 days';
+        document.getElementById('sample-autoprune').textContent = document.getElementById('autoprune').value || 'yes';
+    };
+    
+    // Add event listeners to form fields
+    document.querySelectorAll('#addClientForm input, #addClientForm select').forEach(element => {
+        element.addEventListener('input', updateSampleConfig);
+    });
+    
+    // Form submission
+    document.getElementById('addClientForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // In a real app, you would submit this form via AJAX or regular form submission
+        // For this example, we'll show an alert
+        alert('Client would be added in a real application');
+        
+        // Then redirect to clients list
+        window.location.href = "{{ url_for('clients.index') }}";
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,182 @@
+<!-- app/templates/settings/users/index.html -->
+{% extends 'base.html' %}
+
+{% block title %}User Management - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+ <h1 class="h3 mb-4 text-gray-800">User Management</h1>
+
+ <div class="row">
+ <div class="col-lg-3">
+ <!-- Settings Navigation -->
+ <div class="card shadow mb-4">
+ <div class="card-header py-3">
+ <h6 class="m-0 font-weight-bold text-primary">Settings Menu</h6>
+ </div>
+ <div class="card-body p-0">
+ <div class="list-group list-group-flush">
+ <a href="{{ url_for('settings.general') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-cog fa-fw mr-2"></i> General
+ </a>
+ <a href="{{ url_for('settings.email') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-envelope fa-fw mr-2"></i> Email
+ </a>
+ <a href="{{ url_for('settings.backup') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-save fa-fw mr-2"></i> Backup
+ </a>
+ <a href="{{ url_for('settings.restore') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-undo fa-fw mr-2"></i> Restore
+ </a>
+ <a href="{{ url_for('settings.director') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-server fa-fw mr-2"></i> Director
+ </a>
+ <a href="{{ url_for('settings.security') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-lock fa-fw mr-2"></i> Security
+ </a>
+ <a href="{{ url_for('settings.users') }}" class="list-group-item list-group-item-action active">
+ <i class="fas fa-users fa-fw mr-2"></i> Users
+ </a>
+ <div class="dropdown-divider"></div>
+ <a href="{{ url_for('settings.export') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-file-export fa-fw mr-2"></i> Export Settings
+ </a>
+ <a href="{{ url_for('settings.import_settings') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-file-import fa-fw mr-2"></i> Import Settings
+ </a>
+ </div>
+ </div>
+ </div>
+ 
+ <!-- User Management Navigation -->
+ <div class="card shadow mb-4">
+ <div class="card-header py-3">
+ <h6 class="m-0 font-weight-bold text-primary">User Management</h6>
+ </div>
+ <div class="card-body p-0">
+ <div class="list-group list-group-flush">
+ <a href="{{ url_for('settings.users') }}" class="list-group-item list-group-item-action active">
+ <i class="fas fa-user fa-fw mr-2"></i> Users
+ </a>
+ <a href="{{ url_for('settings.roles') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-user-tag fa-fw mr-2"></i> Roles
+ </a>
+ <a href="{{ url_for('settings.users_settings') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-user-cog fa-fw mr-2"></i> User Settings
+ </a>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <div class="col-lg-9">
+ <!-- Users Card -->
+ <div class="card shadow mb-4">
+ <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+ <h6 class="m-0 font-weight-bold text-primary">Users</h6>
+ <div>
+ <a href="{{ url_for('settings.add_user') }}" class="btn btn-primary btn-sm">
+ <i class="fas fa-user-plus"></i> Add User
+ </a>
+ </div>
+ </div>
+ <div class="card-body">
+ {% with messages = get_flashed_messages(with_categories=true) %}
+ {% if messages %}
+ {% for category, message in messages %}
+ <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+ {{ message }}
+ <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+ </div>
+ {% endfor %}
+ {% endif %}
+ {% endwith %}
+
+ <div class="table-responsive">
+ <table class="table table-bordered" id="usersTable" width="100%" cellspacing="0">
+ <thead>
+ <tr>
+ <th>Username</th>
+ <th>Full Name</th>
+ <th>Email</th>
+ <th>Role</th>
+ <th>Status</th>
+ <th>Last Login</th>
+ <th>Actions</th>
+ </tr>
+ </thead>
+ <tbody>
+ {% for user in users %}
+ <tr>
+ <td>
+ <a href="{{ url_for('settings.view_user', user_id=user.id) }}">
+ {{ user.username }}
+ </a>
+ </td>
+ <td>{{ user.full_name }}</td>
+ <td>{{ user.email }}</td>
+ <td><span class="badge {% if user.role == 'admin' %}bg-danger{% elif user.role == 'operator' %}bg-primary{% else %}bg-info{% endif %}">{{ user.role }}</span></td>
+ <td>
+ {% if user.active %}
+ <span class="badge bg-success">Active</span>
+ {% else %}
+ <span class="badge bg-secondary">Inactive</span>
+ {% endif %}
+ </td>
+ <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') }}</td>
+ <td>
+ <div class="btn-group btn-group-sm" role="group">
+ <a href="{{ url_for('settings.view_user', user_id=user.id) }}" class="btn btn-info" title="View">
+ <i class="fas fa-eye"></i>
+ </a>
+ <a href="{{ url_for('settings.edit_user', user_id=user.id) }}" class="btn btn-warning" title="Edit">
+ <i class="fas fa-edit"></i>
+ </a>
+ <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal{{ user.id }}" title="Delete">
+ <i class="fas fa-trash"></i>
+ </button>
+ </div>
+ 
+ <!-- Delete User Modal -->
+ <div class="modal fade" id="deleteUserModal{{ user.id }}" tabindex="-1" aria-labelledby="deleteUserModalLabel{{ user.id }}" aria-hidden="true">
+ <div class="modal-dialog">
+ <div class="modal-content">
+ <div class="modal-header">
+ <h5 class="modal-title" id="deleteUserModalLabel{{ user.id }}">Confirm Delete</h5>
+ <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+ </div>
+ <div class="modal-body">
+ Are you sure you want to delete user <strong>{{ user.username }}</strong>?
+ This action cannot be undone.
+ </div>
+ <div class="modal-footer">
+ <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+ <form action="{{ url_for('settings.delete_user', user_id=user.id) }}" method="post">
+ <button type="submit" class="btn btn-danger">Delete</button>
+ </form>
+ </div>
+ </div>
+ </div>
+ </div>
+ </td>
+ </tr>
+ {% endfor %}
+ </tbody>
+ </table>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+ $('#usersTable').DataTable({
+ order: [[0, 'asc']]
+ });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,174 @@
+<!-- app/templates/settings/backup.html -->
+{% extends 'base.html' %}
+
+{% block title %}Backup Settings - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Settings</h1>
+
+    <div class="row">
+        <div class="col-lg-3">
+            <!-- Settings Navigation -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Settings Menu</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('settings.general') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-cog fa-fw mr-2"></i> General
+                        </a>
+                        <a href="{{ url_for('settings.email') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-envelope fa-fw mr-2"></i> Email
+                        </a>
+                        <a href="{{ url_for('settings.backup') }}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-save fa-fw mr-2"></i> Backup
+                        </a>
+                        <a href="{{ url_for('settings.restore') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-undo fa-fw mr-2"></i> Restore
+                        </a>
+                        <a href="{{ url_for('settings.security') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-lock fa-fw mr-2"></i> Security
+                        </a>
+
+
+                        <a href="{{ url_for('settings.users') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-users fa-fw mr-2"></i> Users
+                        </a>
+                        <a href="{{ url_for('settings.notifications') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-bell fa-fw mr-2"></i> Notifications
+                        </a>
+
+
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('settings.export') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-export fa-fw mr-2"></i> Export Settings
+                        </a>
+                        <a href="{{ url_for('settings.import_settings') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-import fa-fw mr-2"></i> Import Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <!-- Backup Settings Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Backup Settings</h6>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form method="post" action="{{ url_for('settings.backup') }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="default_pool" class="form-label">Default Pool</label>
+                                <select class="form-select" id="default_pool" name="default_pool">
+                                    {% for pool in pools %}
+                                    <option value="{{ pool }}" {% if settings.backup.default_pool == pool %}selected{% endif %}>{{ pool }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Default pool for new backup jobs.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="default_storage" class="form-label">Default Storage</label>
+                                <select class="form-select" id="default_storage" name="default_storage">
+                                    {% for storage in storages %}
+                                    <option value="{{ storage }}" {% if settings.backup.default_storage == storage %}selected{% endif %}>{{ storage }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Default storage device for new backup jobs.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="default_fileset" class="form-label">Default FileSet</label>
+                                <select class="form-select" id="default_fileset" name="default_fileset">
+                                    {% for fileset in filesets %}
+                                    <option value="{{ fileset }}" {% if settings.backup.default_fileset == fileset %}selected{% endif %}>{{ fileset }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Default fileset for new backup jobs.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="default_schedule" class="form-label">Default Schedule</label>
+                                <select class="form-select" id="default_schedule" name="default_schedule">
+                                    {% for schedule in schedules %}
+                                    <option value="{{ schedule }}" {% if settings.backup.default_schedule == schedule %}selected{% endif %}>{{ schedule }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Default schedule for new backup jobs.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="heartbeat_interval" class="form-label">Heartbeat Interval (seconds)</label>
+                                <input type="number" class="form-control" id="heartbeat_interval" name="heartbeat_interval" value="{{ settings.backup.heartbeat_interval }}" min="0">
+                                <div class="form-text">Interval between heartbeat messages during backup jobs.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="max_volume_size" class="form-label">Max Volume Size (GB)</label>
+                                <input type="number" class="form-control" id="max_volume_size" name="max_volume_size" value="{{ settings.backup.max_volume_size / (1024 * 1024 * 1024) }}" min="0" step="0.1">
+                                <div class="form-text">Maximum size for a single volume in GB.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="max_volume_jobs" class="form-label">Max Jobs Per Volume</label>
+                                <input type="number" class="form-control" id="max_volume_jobs" name="max_volume_jobs" value="{{ settings.backup.max_volume_jobs }}" min="0">
+                                <div class="form-text">Maximum number of jobs to write to a single volume.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="max_volume_files" class="form-label">Max Files Per Volume</label>
+                                <input type="number" class="form-control" id="max_volume_files" name="max_volume_files" value="{{ settings.backup.max_volume_files }}" min="0">
+                                <div class="form-text">Maximum number of files to write to a single volume.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="auto_prune" name="auto_prune" {% if settings.backup.auto_prune %}checked{% endif %}>
+                                    <label class="form-check-label" for="auto_prune">
+                                        Auto Prune
+                                    </label>
+                                    <div class="form-text">Automatically prune expired volumes.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="auto_recycle" name="auto_recycle" {% if settings.backup.auto_recycle %}checked{% endif %}>
+                                    <label class="form-check-label" for="auto_recycle">
+                                        Auto Recycle
+                                    </label>
+                                    <div class="form-text">Automatically recycle purged volumes.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="reset" class="btn btn-secondary me-md-2">Reset</button>
+                            <button type="submit" class="btn btn-primary">Save Settings</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

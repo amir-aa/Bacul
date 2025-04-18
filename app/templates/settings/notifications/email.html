@@ -1,0 +1,239 @@
+<!-- app/templates/settings/notifications/email.html -->
+{% extends 'base.html' %}
+
+{% block title %}Email Notifications - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Email Notifications</h1>
+
+    <div class="row">
+        <div class="col-lg-3">
+            <!-- Settings Navigation -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Settings Menu</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('settings.general') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-cog fa-fw mr-2"></i> General
+                        </a>
+                        <a href="{{ url_for('settings.email') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-envelope fa-fw mr-2"></i> Email
+                        </a>
+                        <a href="{{ url_for('settings.backup') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-save fa-fw mr-2"></i> Backup
+                        </a>
+                        <a href="{{ url_for('settings.restore') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-undo fa-fw mr-2"></i> Restore
+                        </a>
+                        <a href="{{ url_for('settings.director') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-server fa-fw mr-2"></i> Director
+                        </a>
+                        <a href="{{ url_for('settings.security') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-lock fa-fw mr-2"></i> Security
+                        </a>
+                        <a href="{{ url_for('settings.users') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-users fa-fw mr-2"></i> Users
+                        </a>
+                        <a href="{{ url_for('settings.notifications') }}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-bell fa-fw mr-2"></i> Notifications
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('settings.export') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-export fa-fw mr-2"></i> Export Settings
+                        </a>
+                        <a href="{{ url_for('settings.import_settings') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-import fa-fw mr-2"></i> Import Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notifications Navigation -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Notification Channels</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('settings.notifications_email') }}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-envelope fa-fw mr-2"></i> Email Notifications
+                            {% if settings.notifications.email.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('settings.notifications_web') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-desktop fa-fw mr-2"></i> Web Notifications
+                            {% if settings.notifications.web.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('settings.notifications_sms') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-sms fa-fw mr-2"></i> SMS Notifications
+                            {% if settings.notifications.sms.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('settings.notifications_slack') }}" class="list-group-item list-group-item-action">
+                            <i class="fab fa-slack fa-fw mr-2"></i> Slack Notifications
+                            {% if settings.notifications.slack.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('settings.notifications_telegram') }}" class="list-group-item list-group-item-action">
+                            <i class="fab fa-telegram-plane fa-fw mr-2"></i> Telegram Notifications
+                            {% if settings.notifications.telegram.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <!-- Email Notification Settings Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Email Notification Settings</h6>
+                    <div>
+                        <a href="{{ url_for('settings.notifications') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Back to Overview
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle"></i> Configure when and how email notifications are sent. Email server settings are configured in the <a href="{{ url_for('settings.email') }}">Email Settings</a> section.
+                    </div>
+
+                    <form method="post" action="{{ url_for('settings.notifications_email') }}">
+                        <div class="form-check form-switch mb-4">
+                            <input class="form-check-input" type="checkbox" id="enabled" name="enabled" {% if settings.notifications.email.enabled %}checked{% endif %}>
+                            <label class="form-check-label" for="enabled">
+                                <strong>Enable Email Notifications</strong>
+                            </label>
+                            <div class="form-text">Turn email notifications on or off globally.</div>
+                        </div>
+
+                        <h5 class="mb-3">Job Notifications</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="send_job_success" name="send_job_success" {% if settings.notifications.email.send_job_success %}checked{% endif %}>
+                                    <label class="form-check-label" for="send_job_success">
+                                        Successful Jobs
+                                    </label>
+                                    <div class="form-text">Send notifications when jobs complete successfully.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="send_job_error" name="send_job_error" {% if settings.notifications.email.send_job_error %}checked{% endif %}>
+                                    <label class="form-check-label" for="send_job_error">
+                                        Failed Jobs
+                                    </label>
+                                    <div class="form-text">Send notifications when jobs fail with errors.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="send_job_warning" name="send_job_warning" {% if settings.notifications.email.send_job_warning %}checked{% endif %}>
+                                    <label class="form-check-label" for="send_job_warning">
+                                        Jobs with Warnings
+                                    </label>
+                                    <div class="form-text">Send notifications when jobs complete with warnings.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h5 class="mb-3">System Notifications</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="send_volume_warning" name="send_volume_warning" {% if settings.notifications.email.send_volume_warning %}checked{% endif %}>
+                                    <label class="form-check-label" for="send_volume_warning">
+                                        Volume Warnings
+                                    </label>
+                                    <div class="form-text">Send notifications when volumes are running low on space.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="send_catalog_warning" name="send_catalog_warning" {% if settings.notifications.email.send_catalog_warning %}checked{% endif %}>
+                                    <label class="form-check-label" for="send_catalog_warning">
+                                        Catalog Warnings
+                                    </label>
+                                    <div class="form-text">Send notifications for catalog issues (e.g., pruning needed).</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h5 class="mb-3">Reports</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="daily_report" name="daily_report" {% if settings.notifications.email.daily_report %}checked{% endif %}>
+                                    <label class="form-check-label" for="daily_report">
+                                        Daily Report
+                                    </label>
+                                    <div class="form-text">Send a daily summary of all backup activities.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="weekly_report" name="weekly_report" {% if settings.notifications.email.weekly_report %}checked{% endif %}>
+                                    <label class="form-check-label" for="weekly_report">
+                                        Weekly Report
+                                    </label>
+                                    <div class="form-text">Send a weekly summary with statistics and trends.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="monthly_report" name="monthly_report" {% if settings.notifications.email.monthly_report %}checked{% endif %}>
+                                    <label class="form-check-label" for="monthly_report">
+                                        Monthly Report
+                                    </label>
+                                    <div class="form-text">Send a comprehensive monthly report with detailed analytics.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <form action="{{ url_for('settings.test_notification', channel='email') }}" method="post" class="me-md-2">
+                                <button type="submit" class="btn btn-info">Send Test Email</button>
+                            </form>
+                            <button type="reset" class="btn btn-secondary me-md-2">Reset</button>
+                            <button type="submit" class="btn btn-primary">Save Settings</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

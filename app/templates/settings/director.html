@@ -1,0 +1,209 @@
+<!-- app/templates/settings/director.html -->
+{% extends 'base.html' %}
+
+{% block title %}Director Settings - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Settings</h1>
+
+    <div class="row">
+        <div class="col-lg-3">
+            <!-- Settings Navigation -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Settings Menu</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('settings.general') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-cog fa-fw mr-2"></i> General
+                        </a>
+                        <a href="{{ url_for('settings.email') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-envelope fa-fw mr-2"></i> Email
+                        </a>
+                        <a href="{{ url_for('settings.backup') }}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-save fa-fw mr-2"></i> Backup
+                        </a>
+                        <a href="{{ url_for('settings.restore') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-undo fa-fw mr-2"></i> Restore
+                        </a>
+                        <a href="{{ url_for('settings.security') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-lock fa-fw mr-2"></i> Security
+                        </a>
+
+
+                        <a href="{{ url_for('settings.users') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-users fa-fw mr-2"></i> Users
+                        </a>
+                        <a href="{{ url_for('settings.notifications') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-bell fa-fw mr-2"></i> Notifications
+                        </a>
+
+
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('settings.export') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-export fa-fw mr-2"></i> Export Settings
+                        </a>
+                        <a href="{{ url_for('settings.import_settings') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-import fa-fw mr-2"></i> Import Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <!-- Director Settings Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Director Settings</h6>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle"></i> These settings configure the Bacula Director, which is the central management component of Bacula.
+                    </div>
+
+                    <form method="post" action="{{ url_for('settings.director') }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Director Name</label>
+                                <input type="text" class="form-control" id="name" name="name" value="{{ settings.director.name }}">
+                                <div class="form-text">Name of the Bacula Director resource.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="address" class="form-label">Director Address</label>
+                                <input type="text" class="form-control" id="address" name="address" value="{{ settings.director.address }}">
+                                <div class="form-text">IP address or hostname of the Director.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="port" class="form-label">Director Port</label>
+                                <input type="number" class="form-control" id="port" name="port" value="{{ settings.director.port }}">
+                                <div class="form-text">Network port the Director listens on (default: 9101).</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="maximum_concurrent_jobs" class="form-label">Maximum Concurrent Jobs</label>
+                                <input type="number" class="form-control" id="maximum_concurrent_jobs" name="maximum_concurrent_jobs" value="{{ settings.director.maximum_concurrent_jobs }}" min="1">
+                                <div class="form-text">Maximum number of jobs that can run simultaneously.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="working_directory" class="form-label">Working Directory</label>
+                                <input type="text" class="form-control" id="working_directory" name="working_directory" value="{{ settings.director.working_directory }}">
+                                <div class="form-text">Directory where the Director can create working files.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="pid_directory" class="form-label">PID Directory</label>
+                                <input type="text" class="form-control" id="pid_directory" name="pid_directory" value="{{ settings.director.pid_directory }}">
+                                <div class="form-text">Directory where the Director stores its process ID file.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="messages" class="form-label">Messages</label>
+                                <select class="form-select" id="messages" name="messages">
+                                    {% for msg_type in message_types %}
+                                    <option value="{{ msg_type }}" {% if settings.director.messages == msg_type %}selected{% endif %}>{{ msg_type }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Type of messages to log.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="query_file" class="form-label">Query File</label>
+                                <input type="text" class="form-control" id="query_file" name="query_file" value="{{ settings.director.query_file }}">
+                                <div class="form-text">Path to SQL query file used by the Director.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="heartbeat_interval" class="form-label">Heartbeat Interval (seconds)</label>
+                                <input type="number" class="form-control" id="heartbeat_interval" name="heartbeat_interval" value="{{ settings.director.heartbeat_interval }}" min="0">
+                                <div class="form-text">Interval between heartbeat messages to clients.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="statistics_retention" class="form-label">Statistics Retention (days)</label>
+                                <input type="number" class="form-control" id="statistics_retention" name="statistics_retention" value="{{ settings.director.statistics_retention }}" min="1">
+                                <div class="form-text">How long to keep job statistics in the catalog.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="maximum_volume_jobs" class="form-label">Maximum Jobs Per Volume</label>
+                                <input type="number" class="form-control" id="maximum_volume_jobs" name="maximum_volume_jobs" value="{{ settings.director.maximum_volume_jobs }}" min="0">
+                                <div class="form-text">Maximum number of jobs to write to a single volume.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="maximum_volume_files" class="form-label">Maximum Files Per Volume</label>
+                                <input type="number" class="form-control" id="maximum_volume_files" name="maximum_volume_files" value="{{ settings.director.maximum_volume_files }}" min="0">
+                                <div class="form-text">Maximum number of files to write to a single volume.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="maximum_volume_bytes" class="form-label">Maximum Volume Size (GB)</label>
+                                <input type="number" class="form-control" id="maximum_volume_bytes" name="maximum_volume_bytes" value="{{ settings.director.maximum_volume_bytes / 1000000000 }}" min="0" step="0.1">
+                                <div class="form-text">Maximum size for a single volume in GB.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="catalog_retention" class="form-label">Catalog Retention (days)</label>
+                                <input type="number" class="form-control" id="catalog_retention" name="catalog_retention" value="{{ settings.director.catalog_retention }}" min="1">
+                                <div class="form-text">How long to keep catalog records for purged volumes.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="auto_prune" name="auto_prune" {% if settings.director.auto_prune %}checked{% endif %}>
+                                    <label class="form-check-label" for="auto_prune">
+                                        Auto Prune
+                                    </label>
+                                    <div class="form-text">Automatically prune expired volumes.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="auto_recycle" name="auto_recycle" {% if settings.director.auto_recycle %}checked{% endif %}>
+                                    <label class="form-check-label" for="auto_recycle">
+                                        Auto Recycle
+                                    </label>
+                                    <div class="form-text">Automatically recycle purged volumes.</div>
+                                </div>
+                            </div>
+                        </div>
+
+<div class="d-grid gap-2 d-md-flex justify-content-md-end">
+    <a href="{{ url_for('settings.export_director_config') }}" class="btn btn-info me-md-2">
+        <i class="fas fa-file-export"></i> Export Configuration
+    </a>
+    <button type="reset" class="btn btn-secondary me-md-2">Reset</button>
+    <button type="submit" class="btn btn-primary">Save Settings</button>
+</div>
+          
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

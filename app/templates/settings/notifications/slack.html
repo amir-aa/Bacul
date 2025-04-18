@@ -1,0 +1,193 @@
+<!-- app/templates/settings/notifications/slack.html -->
+{% extends 'base.html' %}
+
+{% block title %}Slack Notifications - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Slack Notifications</h1>
+
+    <div class="row">
+        <div class="col-lg-3">
+            <!-- Settings Navigation -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Settings Menu</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('settings.general') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-cog fa-fw mr-2"></i> General
+                        </a>
+                        <a href="{{ url_for('settings.email') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-envelope fa-fw mr-2"></i> Email
+                        </a>
+                        <a href="{{ url_for('settings.backup') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-save fa-fw mr-2"></i> Backup
+                        </a>
+                        <a href="{{ url_for('settings.restore') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-undo fa-fw mr-2"></i> Restore
+                        </a>
+                        <a href="{{ url_for('settings.director') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-server fa-fw mr-2"></i> Director
+                        </a>
+                        <a href="{{ url_for('settings.security') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-lock fa-fw mr-2"></i> Security
+                        </a>
+                        <a href="{{ url_for('settings.users') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-users fa-fw mr-2"></i> Users
+                        </a>
+                        <a href="{{ url_for('settings.notifications') }}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-bell fa-fw mr-2"></i> Notifications
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('settings.export') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-export fa-fw mr-2"></i> Export Settings
+                        </a>
+                        <a href="{{ url_for('settings.import_settings') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-import fa-fw mr-2"></i> Import Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notifications Navigation -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Notification Channels</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('settings.notifications_email') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-envelope fa-fw mr-2"></i> Email Notifications
+                            {% if settings.notifications.email.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('settings.notifications_web') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-desktop fa-fw mr-2"></i> Web Notifications
+                            {% if settings.notifications.web.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('settings.notifications_sms') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-sms fa-fw mr-2"></i> SMS Notifications
+                            {% if settings.notifications.sms.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('settings.notifications_slack') }}" class="list-group-item list-group-item-action active">
+                            <i class="fab fa-slack fa-fw mr-2"></i> Slack Notifications
+                            {% if settings.notifications.slack.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('settings.notifications_telegram') }}" class="list-group-item list-group-item-action">
+                            <i class="fab fa-telegram-plane fa-fw mr-2"></i> Telegram Notifications
+                            {% if settings.notifications.telegram.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <!-- Slack Notification Settings Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Slack Notification Settings</h6>
+                    <div>
+                        <a href="{{ url_for('settings.notifications') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Back to Overview
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle"></i> Configure Slack notifications to send backup status updates to your team's Slack workspace.
+                    </div>
+
+                    <form method="post" action="{{ url_for('settings.notifications_slack') }}">
+                        <div class="form-check form-switch mb-4">
+                            <input class="form-check-input" type="checkbox" id="enabled" name="enabled" {% if settings.notifications.slack.enabled %}checked{% endif %}>
+                            <label class="form-check-label" for="enabled">
+                                <strong>Enable Slack Notifications</strong>
+                            </label>
+                            <div class="form-text">Turn Slack notifications on or off globally.</div>
+                        </div>
+
+                        <h5 class="mb-3">Slack Integration</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="webhook_url" class="form-label">Webhook URL</label>
+                                <input type="text" class="form-control" id="webhook_url" name="webhook_url" value="{{ settings.notifications.slack.webhook_url }}">
+                                <div class="form-text">Incoming webhook URL from Slack. <a href="https://api.slack.com/messaging/webhooks" target="_blank">Learn how to create one</a>.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="channel" class="form-label">Channel</label>
+                                <input type="text" class="form-control" id="channel" name="channel" value="{{ settings.notifications.slack.channel }}">
+                                <div class="form-text">Slack channel to post messages to (e.g., #backups).</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="username" class="form-label">Bot Username</label>
+                                <input type="text" class="form-control" id="username" name="username" value="{{ settings.notifications.slack.username }}">
+                                <div class="form-text">Name to display for the bot posting messages.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="icon_emoji" class="form-label">Icon Emoji</label>
+                                <input type="text" class="form-control" id="icon_emoji" name="icon_emoji" value="{{ settings.notifications.slack.icon_emoji }}">
+                                <div class="form-text">Emoji to use as the bot's icon (e.g., :floppy_disk:).</div>
+                            </div>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="detailed_messages" name="detailed_messages" {% if settings.notifications.slack.detailed_messages %}checked{% endif %}>
+                            <label class="form-check-label" for="detailed_messages">
+                                Send Detailed Messages
+                            </label>
+                            <div class="form-text">If checked, messages will include detailed job information. Otherwise, only basic information is sent.</div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <form action="{{ url_for('settings.test_notification', channel='slack') }}" method="post" class="me-md-2">
+                                <button type="submit" class="btn btn-info">Send Test Message</button>
+                            </form>
+                            <button type="reset" class="btn btn-secondary me-md-2">Reset</button>
+                            <button type="submit" class="btn btn-primary">Save Settings</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

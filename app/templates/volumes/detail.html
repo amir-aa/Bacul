@@ -1,0 +1,273 @@
+<!-- app/templates/volumes/detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}Volume Details - {{ volume.volumename }} - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Volume Details: {{ volume.volumename }}</h1>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Volume Information</h6>
+                    <div>
+                        <a href="{{ url_for('volumes.index') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Back to Volumes
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold">Basic Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Volume Name:</th>
+                                    <td>{{ volume.volumename }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Pool:</th>
+                                    <td>{{ volume.pool_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Media Type:</th>
+                                    <td>{{ volume.mediatype }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td>
+                                        {% if volume.volstatus == 'Full' %}
+                                        <span class="badge bg-warning text-dark">Full</span>
+                                        {% elif volume.volstatus == 'Append' %}
+                                        <span class="badge bg-success">Append</span>
+                                        {% elif volume.volstatus == 'Used' %}
+                                        <span class="badge bg-secondary">Used</span>
+                                        {% elif volume.volstatus == 'Purged' %}
+                                        <span class="badge bg-danger">Purged</span>
+                                        {% else %}
+                                        <span class="badge bg-info">{{ volume.volstatus }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Enabled:</th>
+                                    <td>{{ 'Yes' if volume.enabled else 'No' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Recycle:</th>
+                                    <td>{{ 'Yes' if volume.recycle else 'No' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold">Usage Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Size:</th>
+                                    <td>{{ volume.volbytes|format_bytes }} / {{ volume.max_volbytes|format_bytes }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Usage:</th>
+                                    <td>
+                                        <div class="progress">
+                                            {% if volume.usage_percent < 50 %}
+                                            <div class="progress-bar progress-bar-low" role="progressbar" style="width: {{ volume.usage_percent }}%"
+                                                aria-valuenow="{{ volume.usage_percent }}" aria-valuemin="0" aria-valuemax="100">{{ volume.usage_percent }}%</div>
+                                            {% elif volume.usage_percent < 80 %}
+                                            <div class="progress-bar progress-bar-medium" role="progressbar" style="width: {{ volume.usage_percent }}%"
+                                                aria-valuenow="{{ volume.usage_percent }}" aria-valuemin="0" aria-valuemax="100">{{ volume.usage_percent }}%</div>
+                                            {% else %}
+                                            <div class="progress-bar progress-bar-high" role="progressbar" style="width: {{ volume.usage_percent }}%"
+                                                aria-valuenow="{{ volume.usage_percent }}" aria-valuemin="0" aria-valuemax="100">{{ volume.usage_percent }}%</div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Jobs:</th>
+                                    <td>{{ volume.voljobs }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Files:</th>
+                                    <td>{{ volume.volfiles }}</td>
+                                </tr>
+                                <tr>
+                                    <th>First Written:</th>
+                                    <td>{{ volume.first_written.strftime('%Y-%m-%d %H:%M') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Last Written:</th>
+                                    <td>{{ volume.last_written.strftime('%Y-%m-%d %H:%M') }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6 class="font-weight-bold">Volume Actions</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <form action="{{ url_for('volumes.update_status', volume_id=volume.mediaid) }}" method="post" class="mb-3">
+                                <div class="input-group">
+                                    <select class="form-select" name="status">
+                                        <option value="Append" {% if volume.volstatus == 'Append' %}selected{% endif %}>Append</option>
+                                        <option value="Full" {% if volume.volstatus == 'Full' %}selected{% endif %}>Full</option>
+                                        <option value="Used" {% if volume.volstatus == 'Used' %}selected{% endif %}>Used</option>
+                                        <option value="Purged" {% if volume.volstatus == 'Purged' %}selected{% endif %}>Purged</option>
+                                        <option value="Recycled" {% if volume.volstatus == 'Recycled' %}selected{% endif %}>Recycled</option>
+                                    </select>
+                                    <button class="btn btn-outline-primary" type="submit">Update Status</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-warning me-md-2" data-bs-toggle="modal" data-bs-target="#pruneVolumeModal">
+                                    <i class="fas fa-broom"></i> Prune
+                                </button>
+                                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteVolumeModal">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Jobs on this volume -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Jobs on this Volume</h6>
+                </div>
+                <div class="card-body">
+                    <p>No jobs found on this volume.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Volume Status Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Volume Status</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <div class="mb-3">
+                            {% if volume.volstatus == 'Append' %}
+                            <i class="fas fa-check-circle fa-5x text-success"></i>
+                            {% elif volume.volstatus == 'Full' %}
+                            <i class="fas fa-database fa-5x text-warning"></i>
+                            {% elif volume.volstatus == 'Purged' %}
+                            <i class="fas fa-trash fa-5x text-danger"></i>
+                            {% else %}
+                            <i class="fas fa-info-circle fa-5x text-info"></i>
+                            {% endif %}
+                        </div>
+                        <h4 class="font-weight-bold">{{ volume.volstatus }}</h4>
+                        <p>
+                            {% if volume.volstatus == 'Append' %}
+                            This volume is available for writing new backups.
+                            {% elif volume.volstatus == 'Full' %}
+                            This volume is full and cannot accept more data.
+                            {% elif volume.volstatus == 'Purged' %}
+                            This volume has been purged of all data.
+                            {% elif volume.volstatus == 'Used' %}
+                            This volume has been used but can be recycled.
+                            {% elif volume.volstatus == 'Recycled' %}
+                            This volume has been recycled and is ready for reuse.
+                            {% else %}
+                            Current status of this volume.
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6 class="font-weight-bold">Retention</h6>
+                    <p>This volume will be retained for {{ volume.volretention // (24 * 3600) }} days from the last written date.</p>
+                    
+                    <div class="small text-muted">
+                        Expiration date: {{ (volume.last_written + timedelta(seconds=volume.volretention)).strftime('%Y-%m-%d') }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Volume Location Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Volume Location</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="font-weight-bold">Storage:</h6>
+                        <p>{{ volume.pool_name }}</p>
+                    </div>
+                    
+                    {% if volume.slot > 0 %}
+                    <div class="mb-3">
+                        <h6 class="font-weight-bold">Slot:</h6>
+                        <p>{{ volume.slot }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if volume.inchanger %}
+                    <div class="mb-3">
+                        <h6 class="font-weight-bold">In Changer:</h6>
+                        <p>Yes</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Prune Volume Modal -->
+    <div class="modal fade" id="pruneVolumeModal" tabindex="-1" aria-labelledby="pruneVolumeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pruneVolumeModalLabel">Confirm Prune</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to prune volume <strong>{{ volume.volumename }}</strong>?
+                    This will remove expired jobs from the catalog.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{{ url_for('volumes.update_status', volume_id=volume.mediaid) }}" method="post">
+                        <input type="hidden" name="status" value="Pruned">
+                        <button type="submit" class="btn btn-warning">Prune Volume</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Volume Modal -->
+    <div class="modal fade" id="deleteVolumeModal" tabindex="-1" aria-labelledby="deleteVolumeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteVolumeModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete volume <strong>{{ volume.volumename }}</strong>?
+                    This action cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{{ url_for('volumes.delete_volume', volume_id=volume.mediaid) }}" method="post">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

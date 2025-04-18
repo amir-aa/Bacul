@@ -1,0 +1,253 @@
+<!-- app/templates/schedules/edit_schedule.html -->
+{% extends 'base.html' %}
+
+{% block title %}Edit Schedule: {{ schedule.name }} - Bacula Dashboard{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+.run-config {
+ background-color: #f8f9fc;
+ padding: 15px;
+ border-radius: 5px;
+ margin-bottom: 15px;
+ border: 1px solid #e3e6f0;
+}
+.remove-run {
+ cursor: pointer;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+ <h1 class="h3 mb-4 text-gray-800">Edit Schedule: {{ schedule.name }}</h1>
+
+ <div class="row">
+ <div class="col-lg-8">
+ <div class="card shadow mb-4">
+ <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+ <h6 class="m-0 font-weight-bold text-primary">Schedule Configuration</h6>
+ <div>
+ <a href="{{ url_for('schedules.detail', schedule_id=schedule.scheduleid) }}" class="btn btn-secondary btn-sm">
+ <i class="fas fa-arrow-left"></i> Back to Schedule
+ </a>
+ </div>
+ </div>
+ <div class="card-body">
+ {% with messages = get_flashed_messages(with_categories=true) %}
+ {% if messages %}
+ {% for category, message in messages %}
+ <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+ {{ message }}
+ <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+ </div>
+ {% endfor %}
+ {% endif %}
+ {% endwith %}
+
+ <form method="post" action="{{ url_for('schedules.edit_schedule_post', schedule_id=schedule.scheduleid) }}" id="scheduleForm">
+ <div class="row mb-3">
+ <div class="col-md-6">
+ <label for="name" class="form-label">Schedule Name <span class="text-danger">*</span></label>
+ <input type="text" class="form-control" id="name" name="name" required value="{{ schedule.name }}">
+ <div class="form-text">Name of the schedule, must be unique.</div>
+ </div>
+ <div class="col-md-6">
+ <label for="description" class="form-label">Description</label>
+ <input type="text" class="form-control" id="description" name="description" value="{{ schedule.description }}">
+ <div class="form-text">Brief description of this schedule's purpose.</div>
+ </div>
+ </div>
+
+ <div class="mb-3">
+ <div class="form-check">
+ <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if schedule.is_active %}checked{% endif %}>
+ <label class="form-check-label" for="is_active">
+ Active
+ </label>
+ <div class="form-text">Uncheck to disable this schedule.</div>
+ </div>
+ </div>
+
+ <hr>
+
+ <h5 class="mb-3">Run Configurations</h5>
+ <p class="text-muted mb-3">Define when backups should run and at what level.</p>
+
+ <div id="runConfigs">
+ <!-- Existing run configurations -->
+ {% for i in range(schedule.runs|length) %}
+ {% set run = schedule.runs[i] %}
+ <div class="run-config" id="run-{{ i }}">
+ <div class="row">
+ <div class="col-md-11">
+ <div class="row mb-3">
+ <div class="col-md-4">
+ <label for="level_{{ i }}" class="form-label">Backup Level <span class="text-danger">*</span></label>
+ <select class="form-select" id="level_{{ i }}" name="level_{{ i }}" required>
+ <option value="Full" {% if run.level == 'Full' %}selected{% endif %}>Full</option>
+ <option value="Differential" {% if run.level == 'Differential' %}selected{% endif %}>Differential</option>
+ <option value="Incremental" {% if run.level == 'Incremental' %}selected{% endif %}>Incremental</option>
+ </select>
+ </div>
+ <div class="col-md-4">
+ <label for="day_{{ i }}" class="form-label">Day <span class="text-danger">*</span></label>
+ <select class="form-select" id="day_{{ i }}" name="day_{{ i }}" required>
+ <option value="Monday" {% if run.day == 'Monday' %}selected{% endif %}>Monday</option>
+ <option value="Tuesday" {% if run.day == 'Tuesday' %}selected{% endif %}>Tuesday</option>
+ <option value="Wednesday" {% if run.day == 'Wednesday' %}selected{% endif %}>Wednesday</option>
+ <option value="Thursday" {% if run.day == 'Thursday' %}selected{% endif %}>Thursday</option>
+ <option value="Friday" {% if run.day == 'Friday' %}selected{% endif %}>Friday</option>
+ <option value="Saturday" {% if run.day == 'Saturday' %}selected{% endif %}>Saturday</option>
+ <option value="Sunday" {% if run.day == 'Sunday' %}selected{% endif %}>Sunday</option>
+ <option value="Hourly" {% if run.day == 'Hourly' %}selected{% endif %}>Hourly</option>
+ <option value="1st" {% if run.day == '1st' %}selected{% endif %}>1st Day of Month</option>
+ <option value="January 1" {% if run.day == 'January 1' %}selected{% endif %}>January 1</option>
+ <option value="April 1" {% if run.day == 'April 1' %}selected{% endif %}>April 1</option>
+ <option value="July 1" {% if run.day == 'July 1' %}selected{% endif %}>July 1</option>
+ <option value="October 1" {% if run.day == 'October 1' %}selected{% endif %}>October 1</option>
+ </select>
+ </div>
+ <div class="col-md-4">
+ <label for="time_{{ i }}" class="form-label">Time <span class="text-danger">*</span></label>
+ <input type="time" class="form-control" id="time_{{ i }}" name="time_{{ i }}" required value="{{ run.time }}">
+ </div>
+ </div>
+ <div class="form-check mb-2">
+ <input class="form-check-input" type="checkbox" id="enabled_{{ i }}" name="enabled_{{ i }}" {% if run.enabled %}checked{% endif %}>
+ <label class="form-check-label" for="enabled_{{ i }}">
+ Enabled
+ </label>
+ </div>
+ </div>
+ <div class="col-md-1 d-flex align-items-center justify-content-center">
+ <span class="text-danger remove-run" onclick="removeRun({{ i }})" title="Remove this run configuration">
+ <i class="fas fa-times-circle fa-lg"></i>
+ </span>
+ </div>
+ </div>
+ </div>
+ {% endfor %}
+ </div>
+
+ <div class="d-grid gap-2 mb-4">
+ <button type="button" class="btn btn-outline-primary" id="addRunBtn">
+ <i class="fas fa-plus"></i> Add Another Run Configuration
+ </button>
+ </div>
+
+ <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+ <a href="{{ url_for('schedules.detail', schedule_id=schedule.scheduleid) }}" class="btn btn-secondary me-md-2">Cancel</a>
+ <button type="submit" class="btn btn-primary">Update Schedule</button>
+ </div>
+ </form>
+ </div>
+ </div>
+ </div>
+
+ <div class="col-lg-4">
+ <div class="card shadow mb-4">
+ <div class="card-header py-3">
+ <h6 class="m-0 font-weight-bold text-primary">Schedule Information</h6>
+ </div>
+ <div class="card-body">
+ <p>Schedules define when backup jobs should run and at what level.</p>
+ 
+ <h6 class="font-weight-bold">Backup Levels:</h6>
+ <ul>
+ <li><strong>Full</strong> - Complete backup of all files</li>
+ <li><strong>Differential</strong> - Backup of files changed since the last Full backup</li>
+ <li><strong>Incremental</strong> - Backup of files changed since the last backup of any level</li>
+ </ul>
+ 
+ <h6 class="font-weight-bold">Common Patterns:</h6>
+ <ul>
+ <li>Daily incremental backups on weekdays</li>
+ <li>Weekly full backup on weekends</li>
+ <li>Monthly full backup on the first day of the month</li>
+ <li>Quarterly full backups for archiving</li>
+ </ul>
+ 
+ <div class="alert alert-warning mt-3">
+ <i class="fas fa-exclamation-triangle"></i> Changing a schedule might affect existing backup jobs that use it.
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let runCount = {{ schedule.runs|length }};
+
+function removeRun(index) {
+ const element = document.getElementById(`run-${index}`);
+ if (element) {
+ element.remove();
+ }
+}
+
+document.getElementById('addRunBtn').addEventListener('click', function() {
+ const runConfigsDiv = document.getElementById('runConfigs');
+ const newRunDiv = document.createElement('div');
+ newRunDiv.className = 'run-config';
+ newRunDiv.id = `run-${runCount}`;
+ 
+ newRunDiv.innerHTML = `
+ <div class="row">
+ <div class="col-md-11">
+ <div class="row mb-3">
+ <div class="col-md-4">
+ <label for="level_${runCount}" class="form-label">Backup Level <span class="text-danger">*</span></label>
+ <select class="form-select" id="level_${runCount}" name="level_${runCount}" required>
+ <option value="Full">Full</option>
+ <option value="Differential">Differential</option>
+ <option value="Incremental">Incremental</option>
+ </select>
+ </div>
+ <div class="col-md-4">
+ <label for="day_${runCount}" class="form-label">Day <span class="text-danger">*</span></label>
+ <select class="form-select" id="day_${runCount}" name="day_${runCount}" required>
+ <option value="Monday">Monday</option>
+ <option value="Tuesday">Tuesday</option>
+ <option value="Wednesday">Wednesday</option>
+ <option value="Thursday">Thursday</option>
+ <option value="Friday">Friday</option>
+ <option value="Saturday">Saturday</option>
+ <option value="Sunday">Sunday</option>
+ <option value="Hourly">Hourly</option>
+ <option value="1st">1st Day of Month</option>
+ <option value="January 1">January 1</option>
+ <option value="April 1">April 1</option>
+ <option value="July 1">July 1</option>
+ <option value="October 1">October 1</option>
+ </select>
+ </div>
+ <div class="col-md-4">
+ <label for="time_${runCount}" class="form-label">Time <span class="text-danger">*</span></label>
+ <input type="time" class="form-control" id="time_${runCount}" name="time_${runCount}" required value="20:00">
+ </div>
+ </div>
+ <div class="form-check mb-2">
+ <input class="form-check-input" type="checkbox" id="enabled_${runCount}" name="enabled_${runCount}" checked>
+ <label class="form-check-label" for="enabled_${runCount}">
+ Enabled
+ </label>
+ </div>
+ </div>
+ <div class="col-md-1 d-flex align-items-center justify-content-center">
+ <span class="text-danger remove-run" onclick="removeRun(${runCount})" title="Remove this run configuration">
+ <i class="fas fa-times-circle fa-lg"></i>
+ </span>
+ </div>
+ </div>
+ `;
+ 
+ runConfigsDiv.appendChild(newRunDiv);
+ runCount++;
+});
+</script>
+{% endblock %}

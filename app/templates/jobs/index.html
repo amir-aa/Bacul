@@ -1,0 +1,748 @@
+<!-- app/templates/jobs/index.html -->
+{% extends 'base.html' %}
+
+{% block title %}Backup Jobs - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-2 text-gray-800">Backup Jobs</h1>
+    <p class="mb-4">View, manage, and monitor all backup jobs in your Bacula environment.</p>
+
+    <!-- Job Stats Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Jobs (Last 24h)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_24h }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-day fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Successful Jobs (Last 24h)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.successful_24h }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Running Jobs</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.running }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-play-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Failed Jobs (Last 24h)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.failed_24h }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Job Success Rate Chart -->
+    <div class="row">
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Job Success Rate (Last 7 Days)</h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                            aria-labelledby="dropdownMenuLink">
+                            <div class="dropdown-header">Time Range:</div>
+                            <a class="dropdown-item" href="#" data-range="7">Last 7 Days</a>
+                            <a class="dropdown-item" href="#" data-range="14">Last 14 Days</a>
+                            <a class="dropdown-item" href="#" data-range="30">Last 30 Days</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="jobSuccessRateChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Job Types Distribution -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Job Types Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="jobTypesChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-primary"></i> Full
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-success"></i> Incremental
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-info"></i> Differential
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Transfer Chart -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Data Transfer Volume (Last 7 Days)</h6>
+        </div>
+        <div class="card-body">
+            <div class="chart-area">
+                <canvas id="dataTransferChart" style="height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jobs Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Recent Jobs</h6>
+            <div>
+                <a href="{{ url_for('jobs.run_job') }}" class="btn btn-success btn-sm">
+                    <i class="fas fa-play"></i> Run Job
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Filters -->
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <select class="form-select" id="statusFilter">
+                        <option value="">All Statuses</option>
+                        <option value="T">Successful</option>
+                        <option value="E">Failed</option>
+                        <option value="R">Running</option>
+                        <option value="C">Created</option>
+                        <option value="A">Canceled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="clientFilter">
+                        <option value="">All Clients</option>
+                        {% for client in clients %}
+                        <option value="{{ client.name }}">{{ client.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="levelFilter">
+                        <option value="">All Levels</option>
+                        <option value="F">Full</option>
+                        <option value="I">Incremental</option>
+                        <option value="D">Differential</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="jobSearch" placeholder="Search...">
+                        <button class="btn btn-outline-secondary" type="button" id="clearFilters">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered" id="jobsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Job ID</th>
+                            <th>Name</th>
+                            <th>Client</th>
+                            <th>Type</th>
+                            <th>Level</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                            <th>Size</th>
+                            <th>Files</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in jobs %}
+                        <tr data-status="{{ job.jobstatus }}" data-client="{{ job.client_name }}" data-level="{{ job.level }}">
+                            <td>{{ job.jobid }}</td>
+                            <td>{{ job.name }}</td>
+                            <td>{{ job.client_name }}</td>
+                            <td>{{ job.type }}</td>
+                            <td>
+                                {% if job.level == 'F' %}
+                                <span class="badge bg-primary">Full</span>
+                                {% elif job.level == 'I' %}
+                                <span class="badge bg-success">Incremental</span>
+                                {% elif job.level == 'D' %}
+                                <span class="badge bg-info">Differential</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ job.level }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ job.starttime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                {% if job.endtime %}
+                                {{ job.endtime.strftime('%Y-%m-%d %H:%M:%S') }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if job.endtime and job.starttime %}
+                                {{ format_duration(job.endtime - job.starttime) }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if job.jobstatus == 'T' %}
+                                <span class="badge bg-success">Success</span>
+                                {% elif job.jobstatus == 'E' %}
+                                <span class="badge bg-danger">Error</span>
+                                {% elif job.jobstatus == 'R' %}
+                                <span class="badge bg-info">Running</span>
+                                {% elif job.jobstatus == 'C' %}
+                                <span class="badge bg-warning">Created</span>
+                                {% elif job.jobstatus == 'A' %}
+                                <span class="badge bg-secondary">Canceled</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ job.jobstatus }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ format_bytes(job.jobbytes) }}</td>
+                            <td>{{ job.jobfiles }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('jobs.job_status', job_id=job.jobid) }}" class="btn btn-info btn-sm" title="View Details">
+                                        <i class="fas fa-info-circle"></i>
+                                    </a>
+                                    {% if job.jobstatus == 'R' %}
+                                    <button class="btn btn-danger btn-sm cancel-job" data-jobid="{{ job.jobid }}" title="Cancel Job">
+                                        <i class="fas fa-stop"></i>
+                                    </button>
+                                    {% endif %}
+                                    {% if job.jobstatus == 'T' %}
+                                    <button class="btn btn-success btn-sm run-again" data-jobname="{{ job.name }}" data-client="{{ job.client_name }}" title="Run Again">
+                                        <i class="fas fa-redo"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Analysis -->
+    <div class="row">
+        <!-- Top Error Types -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top Error Types</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="errorTypesTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Error Type</th>
+                                    <th>Count</th>
+                                    <th>Last Occurrence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for error in error_types %}
+                                <tr>
+                                    <td>{{ error.type }}</td>
+                                    <td>{{ error.count }}</td>
+                                    <td>{{ error.last_occurrence.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clients with Most Failures -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Clients with Most Failures</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-bar">
+                        <canvas id="clientFailuresChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Running Jobs Details -->
+    {% if running_jobs %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Currently Running Jobs</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Job ID</th>
+                            <th>Name</th>
+                            <th>Client</th>
+                            <th>Type</th>
+                            <th>Level</th>
+                            <th>Started</th>
+                            <th>Runtime</th>
+                            <th>Progress</th>
+                            <th>Files</th>
+                            <th>Bytes</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in running_jobs %}
+                        <tr>
+                            <td>{{ job.jobid }}</td>
+                            <td>{{ job.name }}</td>
+                            <td>{{ job.client_name }}</td>
+                            <td>{{ job.type }}</td>
+                            <td>
+                                {% if job.level == 'F' %}
+                                <span class="badge bg-primary">Full</span>
+                                {% elif job.level == 'I' %}
+                                <span class="badge bg-success">Incremental</span>
+                                {% elif job.level == 'D' %}
+                                <span class="badge bg-info">Differential</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ job.level }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ job.starttime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>{{ format_duration(now - job.starttime) }}</td>
+                            <td>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" 
+                                         style="width: {{ job.progress }}%;" aria-valuenow="{{ job.progress }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ job.progress }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ job.jobfiles }}</td>
+                            <td>{{ format_bytes(job.jobbytes) }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('jobs.job_status', job_id=job.jobid) }}" class="btn btn-info btn-sm" title="View Details">
+                                        <i class="fas fa-info-circle"></i>
+                                    </a>
+                                    <button class="btn btn-danger btn-sm cancel-job" data-jobid="{{ job.jobid }}" title="Cancel Job">
+                                        <i class="fas fa-stop"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Run Job Modal -->
+<div class="modal fade" id="runJobModal" tabindex="-1" aria-labelledby="runJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="runJobModalLabel">Run Job Again</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="runJobForm" method="post" action="{{ url_for('jobs.run_job') }}">
+                    <input type="hidden" id="job_name" name="job_name">
+                    <input type="hidden" id="client_name" name="client_name">
+                    
+                    <div class="mb-3">
+                        <label for="level" class="form-label">Backup Level</label>
+                        <select class="form-select" id="level" name="level">
+                            <option value="Incremental">Incremental</option>
+                            <option value="Differential">Differential</option>
+                            <option value="Full">Full</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">Priority</label>
+                        <select class="form-select" id="priority" name="priority">
+                            <option value="10">Normal (10)</option>
+                            <option value="5">Low (5)</option>
+                            <option value="15">High (15)</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="runJobForm" class="btn btn-primary">Run Job</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable
+    const jobsTable = $('#jobsTable').DataTable({
+        "order": [[0, "desc"]],
+        "pageLength": 25,
+        "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
+    });
+    
+    // Job Success Rate Chart
+    const successRateCtx = document.getElementById('jobSuccessRateChart').getContext('2d');
+    const successRateChart = new Chart(successRateCtx, {
+        type: 'line',
+        data: {
+            labels: {{ success_rate_data.labels|tojson }},
+            datasets: [
+                {
+                    label: 'Success Rate (%)',
+                    data: {{ success_rate_data.success_rate|tojson }},
+                    backgroundColor: 'rgba(28, 200, 138, 0.2)',
+                    borderColor: 'rgba(28, 200, 138, 1)',
+                    pointRadius: 3,
+                    pointBackgroundColor: 'rgba(28, 200, 138, 1)',
+                    pointBorderColor: 'rgba(28, 200, 138, 1)',
+                    pointHoverRadius: 5,
+                    pointHoverBackgroundColor: 'rgba(28, 200, 138, 1)',
+                    pointHoverBorderColor: 'rgba(28, 200, 138, 1)',
+                    pointHitRadius: 10,
+                    pointBorderWidth: 2,
+                    yAxisID: 'y-axis-rate'
+                },
+                {
+                    label: 'Total Jobs',
+                    data: {{ success_rate_data.total_jobs|tojson }},
+                    backgroundColor: 'rgba(78, 115, 223, 0.2)',
+                    borderColor: 'rgba(78, 115, 223, 1)',
+                    pointRadius: 3,
+                    pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                    pointBorderColor: 'rgba(78, 115, 223, 1)',
+                    pointHoverRadius: 5,
+                    pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+                    pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                    pointHitRadius: 10,
+                    pointBorderWidth: 2,
+                    yAxisID: 'y-axis-count'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                'y-axis-rate': {
+                    type: 'linear',
+                    position: 'left',
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Success Rate (%)'
+                    }
+                },
+                'y-axis-count': {
+                    type: 'linear',
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Number of Jobs'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Job Types Distribution Chart
+    const jobTypesCtx = document.getElementById('jobTypesChart').getContext('2d');
+    const jobTypesChart = new Chart(jobTypesCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Full', 'Incremental', 'Differential'],
+            datasets: [{
+                data: {{ job_types_data|tojson }},
+                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc'],
+                hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf'],
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Data Transfer Chart
+    const dataTransferCtx = document.getElementById('dataTransferChart').getContext('2d');
+    const dataTransferChart = new Chart(dataTransferCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ data_transfer.labels|tojson }},
+            datasets: [{
+                label: 'Data Backed Up (GB)',
+                data: {{ data_transfer.data|tojson }},
+                backgroundColor: 'rgba(54, 185, 204, 0.2)',
+                borderColor: 'rgba(54, 185, 204, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Data Size (GB)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Client Failures Chart
+    const clientFailuresCtx = document.getElementById('clientFailuresChart').getContext('2d');
+    const clientFailuresChart = new Chart(clientFailuresCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ client_failures.labels|tojson }},
+            datasets: [{
+                label: 'Failed Jobs',
+                data: {{ client_failures.data|tojson }},
+                backgroundColor: 'rgba(231, 74, 59, 0.2)',
+                borderColor: 'rgba(231, 74, 59, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Failed Jobs'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Filters
+    $('#statusFilter, #clientFilter, #levelFilter').on('change', function() {
+        filterTable();
+    });
+    
+    $('#jobSearch').on('keyup', function() {
+        filterTable();
+    });
+    
+    $('#clearFilters').on('click', function() {
+        $('#statusFilter').val('');
+        $('#clientFilter').val('');
+        $('#levelFilter').val('');
+        $('#jobSearch').val('');
+        filterTable();
+    });
+    
+    function filterTable() {
+        const statusFilter = $('#statusFilter').val();
+        const clientFilter = $('#clientFilter').val();
+        const levelFilter = $('#levelFilter').val();
+        const searchText = $('#jobSearch').val().toLowerCase();
+        
+        jobsTable.rows().every(function() {
+            const rowData = this.data();
+            const rowNode = this.node();
+            const $row = $(rowNode);
+            
+            const status = $row.data('status');
+            const client = $row.data('client');
+            const level = $row.data('level');
+            
+            let showRow = true;
+            
+            if (statusFilter && status !== statusFilter) {
+                showRow = false;
+            }
+            
+            if (clientFilter && client !== clientFilter) {
+                showRow = false;
+            }
+            
+            if (levelFilter && level !== levelFilter) {
+                showRow = false;
+            }
+            
+            if (searchText) {
+                let found = false;
+                for (let i = 0; i < rowData.length; i++) {
+                    if (rowData[i] && rowData[i].toString().toLowerCase().includes(searchText)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    showRow = false;
+                }
+            }
+            
+            this.nodes().to$().toggle(showRow);
+        });
+        
+        jobsTable.draw();
+    }
+    
+    // Cancel Job buttons
+    $('.cancel-job').on('click', function() {
+        const jobId = $(this).data('jobid');
+        if (confirm('Are you sure you want to cancel this job?')) {
+            fetch(`/jobs/${jobId}/cancel`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Job cancelled successfully');
+                    location.reload();
+                } else {
+                    alert('Error cancelling job: ' + data.message);
+                }
+            });
+        }
+    });
+    
+    // Run Again buttons
+    $('.run-again').on('click', function() {
+        const jobName = $(this).data('jobname');
+        const clientName = $(this).data('client');
+        
+        $('#job_name').val(jobName);
+        $('#client_name').val(clientName);
+        
+        const runJobModal = new bootstrap.Modal(document.getElementById('runJobModal'));
+        runJobModal.show();
+    });
+    
+    // Time range selection for success rate chart
+    $('[data-range]').on('click', function(e) {
+        e.preventDefault();
+        const range = $(this).data('range');
+        
+        // In a real app, you'd make an AJAX call to get new data
+        // For this example, we'll just simulate it
+        alert(`Would fetch data for last ${range} days`);
+    });
+    
+    // Auto-refresh running jobs every 30 seconds
+    setInterval(function() {
+        if (document.querySelectorAll('tr[data-status="R"]').length > 0) {
+            fetch('/jobs/running', {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // In a real app, you'd update the running jobs section
+                console.log("Refreshed running jobs data");
+            });
+        }
+    }, 30000);
+});
+</script>
+{% endblock %}

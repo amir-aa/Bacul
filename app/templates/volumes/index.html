@@ -1,0 +1,205 @@
+<!-- app/templates/volumes/index.html -->
+{% extends 'base.html' %}
+
+{% block title %}Volumes - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Volumes</h1>
+
+    <!-- Statistics Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Volumes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_volumes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-database fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Append Volumes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.append_volumes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-plus-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Full Volumes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.full_volumes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-database fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Average Usage</div>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto">
+                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">{{ stats.avg_usage }}%</div>
+                                </div>
+                                <div class="col">
+                                    <div class="progress progress-sm mr-2">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ stats.avg_usage }}%"
+                                            aria-valuenow="{{ stats.avg_usage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Volumes Table Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">All Volumes</h6>
+            <div>
+                <a href="{{ url_for('volumes.add_volume') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Add Volume
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="volumesTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Volume Name</th>
+                            <th>Pool</th>
+                            <th>Media Type</th>
+                            <th>Status</th>
+                            <th>Last Written</th>
+                            <th>Size</th>
+                            <th>Usage</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for volume in volumes %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('volumes.detail', volume_id=volume.mediaid) }}">
+                                    {{ volume.volumename }}
+                                </a>
+                            </td>
+                            <td>{{ volume.pool_name }}</td>
+                            <td>{{ volume.mediatype }}</td>
+                            <td>
+                                {% if volume.volstatus == 'Full' %}
+                                <span class="badge bg-warning text-dark">Full</span>
+                                {% elif volume.volstatus == 'Append' %}
+                                <span class="badge bg-success">Append</span>
+                                {% elif volume.volstatus == 'Used' %}
+                                <span class="badge bg-secondary">Used</span>
+                                {% elif volume.volstatus == 'Purged' %}
+                                <span class="badge bg-danger">Purged</span>
+                                {% else %}
+                                <span class="badge bg-info">{{ volume.volstatus }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ volume.last_written.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ volume.volbytes|format_bytes }}</td>
+                            <td>
+                                <div class="progress">
+                                    {% if volume.usage_percent < 50 %}
+                                    <div class="progress-bar progress-bar-low" role="progressbar" style="width: {{ volume.usage_percent }}%"
+                                        aria-valuenow="{{ volume.usage_percent }}" aria-valuemin="0" aria-valuemax="100">{{ volume.usage_percent }}%</div>
+                                    {% elif volume.usage_percent < 80 %}
+                                    <div class="progress-bar progress-bar-medium" role="progressbar" style="width: {{ volume.usage_percent }}%"
+                                        aria-valuenow="{{ volume.usage_percent }}" aria-valuemin="0" aria-valuemax="100">{{ volume.usage_percent }}%</div>
+                                    {% else %}
+                                    <div class="progress-bar progress-bar-high" role="progressbar" style="width: {{ volume.usage_percent }}%"
+                                        aria-valuenow="{{ volume.usage_percent }}" aria-valuemin="0" aria-valuemax="100">{{ volume.usage_percent }}%</div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('volumes.detail', volume_id=volume.mediaid) }}" class="btn btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteVolumeModal{{ volume.mediaid }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Delete Volume Modal -->
+                                <div class="modal fade" id="deleteVolumeModal{{ volume.mediaid }}" tabindex="-1" aria-labelledby="deleteVolumeModalLabel{{ volume.mediaid }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteVolumeModalLabel{{ volume.mediaid }}">Confirm Delete</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to delete volume <strong>{{ volume.volumename }}</strong>?
+                                                This action cannot be undone.
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{{ url_for('volumes.delete_volume', volume_id=volume.mediaid) }}" method="post">
+                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#volumesTable').DataTable({
+        order: [[4, 'desc']]
+    });
+});
+</script>
+{% endblock %}

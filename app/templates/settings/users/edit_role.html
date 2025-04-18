@@ -1,0 +1,28 @@
+<!-- app/templates/settings/users/edit_role.html -->
+{% extends 'base.html' %}
+
+{% block title %}Edit Role: {{ role.name }} - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+ <h1 class="h3 mb-4 text-gray-800">Edit Role: {{ role.name }}</h1>
+
+ <div class="row">
+ <div class="col-lg-3">
+ <!-- Settings Navigation -->
+ <div class="card shadow mb-4">
+ <div class="card-header py-3">
+ <h6 class="m-0 font-weight-bold text-primary">Settings Menu</h6>
+ </div>
+ <div class="card-body p-0">
+ <div class="list-group list-group-flush">
+ <a href="{{ url_for('settings.general') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-cog fa-fw mr-2"></i> General
+ </a>
+ <a href="{{ url_for('settings.email') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-envelope fa-fw mr-2"></i> Email
+ </a>
+ <a href="{{ url_for('settings.backup') }}" class="list-group-item list-group-item-action">
+ <i class="fas fa-save fa-fw mr-2"></i> Backup
+ </a>
+ <a href="{{ url_for('settings.restore') }}" class="list-group-item list-group-item-

@@ -1,0 +1,70 @@
+/* app/static/css/custom.css */
+
+/* Pool and Storage status indicators */
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.status-online {
+    background-color: #1cc88a;
+}
+
+.status-offline {
+    background-color: #e74a3b;
+}
+
+.status-warning {
+    background-color: #f6c23e;
+}
+
+/* Progress bars with different thresholds */
+.progress-bar-low {
+    background-color: #1cc88a;
+}
+
+.progress-bar-medium {
+    background-color: #f6c23e;
+}
+
+.progress-bar-high {
+    background-color: #e74a3b;
+}
+
+/* Card hover effect */
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+/* Volume label styling */
+.volume-label {
+    display: inline-block;
+    padding: 0.25em 0.6em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+    background-color: #f8f9fc;
+    border: 1px solid #e3e6f0;
+}
+
+/* Storage type icons */
+.storage-icon-file {
+    color: #4e73df;
+}
+
+.storage-icon-tape {
+    color: #1cc88a;
+}
+
+.storage-icon-cloud {
+    color: #36b9cc;
+}

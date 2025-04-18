@@ -1,0 +1,271 @@
+<!-- app/templates/dashboard/index.html -->
+{% extends 'base.html' %}
+
+{% block title %}Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Bacula Dashboard</h1>
+    
+    <!-- Stats Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Clients</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_clients }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-server fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Successful Jobs</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ successful_jobs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Failed Jobs</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ failed_jobs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total Jobs</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_jobs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="row">
+        <!-- Jobs Chart -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Jobs Last 7 Days</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="jobsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Storage Usage -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Storage Usage</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie">
+                        <canvas id="storageChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Jobs Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Recent Jobs</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="recentJobsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Job ID</th>
+                            <th>Name</th>
+                            <th>Client</th>
+                            <th>Type</th>
+                            <th>Level</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Status</th>
+                            <th>Size</th>
+                            <th>Files</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in recent_jobs %}
+                        <tr>
+                            <td>{{ job.jobid }}</td>
+                            <td>{{ job.name }}</td>
+                            <td>{{ job.client_name }}</td>
+                            <td>{{ job.type }}</td>
+                            <td>{{ job.level }}</td>
+                            <td>{{ job.starttime }}</td>
+                            <td>{{ job.endtime }}</td>
+                            <td>
+                                {% if job.jobstatus == 'T' %}
+                                <span class="badge badge-success">Success</span>
+                                {% elif job.jobstatus == 'E' %}
+                                <span class="badge badge-danger">Error</span>
+                                {% elif job.jobstatus == 'R' %}
+                                <span class="badge badge-info">Running</span>
+                                {% else %}
+                                <span class="badge badge-secondary">{{ job.jobstatus }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ (job.jobbytes / 1024 / 1024)|round(2) }} MB</td>
+                            <td>{{ job.jobfiles }}</td>
+                            <td>
+                                <a href="{{ url_for('jobs.job_status', job_id=job.jobid) }}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-info-circle"></i>
+                                </a>
+                                {% if job.jobstatus == 'R' %}
+                                <button class="btn btn-sm btn-danger cancel-job" data-jobid="{{ job.jobid }}">
+                                    <i class="fas fa-stop"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Jobs Chart
+    fetch('{{ url_for("dashboard.jobs_last_week") }}')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('jobsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+    
+    // Storage Chart
+    const storageData = {
+        labels: [
+            {% for pool in pools %}
+                '{{ pool.name }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for pool in pools %}
+                    {{ pool.total_bytes }},
+                {% endfor %}
+            ],
+            backgroundColor: [
+                'rgba(75, 192, 192, 0.2)',
+                'rgba(54, 162, 235, 0.2)',
+                'rgba(255, 206, 86, 0.2)',
+                'rgba(255, 99, 132, 0.2)',
+                'rgba(153, 102, 255, 0.2)',
+            ],
+            borderColor: [
+                'rgba(75, 192, 192, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(255, 99, 132, 1)',
+                'rgba(153, 102, 255, 1)',
+            ],
+            borderWidth: 1
+        }]
+    };
+    
+    const storageCtx = document.getElementById('storageChart').getContext('2d');
+    new Chart(storageCtx, {
+        type: 'pie',
+        data: storageData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+        }
+    });
+    
+    // Initialize DataTable
+    $('#recentJobsTable').DataTable();
+    
+    // Cancel Job buttons
+    document.querySelectorAll('.cancel-job').forEach(button => {
+        button.addEventListener('click', function() {
+            const jobId = this.getAttribute('data-jobid');
+            if (confirm('Are you sure you want to cancel this job?')) {
+                fetch(`/jobs/${jobId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Job cancelled successfully');
+                        location.reload();
+                    } else {
+                        alert('Error cancelling job: ' + data.message);
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

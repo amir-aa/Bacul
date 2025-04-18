@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ client.name }} - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">
+        Client: {{ client.name }}
+        <a href="{{ url_for('clients.edit_client', client_id=client.clientid) }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-edit"></i> Edit
+        </a>
+    </h1>
+    
+    <!-- Stats Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Jobs</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_jobs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Successful Jobs</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ successful_jobs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Failed Jobs</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ failed_jobs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Success Rate</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ (successful_jobs / total_jobs * 100)|round|int if total_jobs > 0 else 0 }}%
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percent fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Backup Size Chart -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Backup Size (Last 30 Days)</h6>
+        </div>
+        <div class="card-body">
+            <div class="chart-area">
+                <canvas id="backupSizeChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Jobs -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Recent Jobs</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="recentJobsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Job ID</th>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Level</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Status</th>
+                            <th>Size</th>
+                            <th>Files</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in recent_jobs %}
+                        <tr>
+                            <td>{{ job.jobid }}</td>
+                            <td>{{ job.name }}</td>
+                            <td>{{ job.type }}</td>
+                            <td>{{ job.level }}</td>
+                            <td>{{ job.starttime }}</td>
+                            <td>{{ job.endtime }}</td>
+                            <td>
+                                {% if job.jobstatus == 'T' %}
+                                <span class="badge badge-success">Success</span>
+                                {% elif job.jobstatus == 'E' %}
+                                <span class="badge badge-danger">Error</span>
+                                {% elif job.jobstatus == 'R' %}
+                                <span class="badge badge-info">Running</span>
+                                {% else %}
+                                <span class="badge badge-secondary">{{ job.jobstatus }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ (job.jobbytes / 1024 / 1024)|round(2) }} MB</td>
+                            <td>{{ job.jobfiles }}</td>
+                            <td>
+                                <a href="{{ url_for('jobs.job_status', job_id=job.jobid) }}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-info-circle"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    $('#recentJobsTable').DataTable();
+    
+    // Backup Size Chart
+    const ctx = document.getElementById('backupSizeChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ dates|tojson }},
+            datasets: [{
+                label: 'Backup Size (MB)',
+                data: {{ bytes_data|tojson }}.map(bytes => bytes / 1024 / 1024),
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                pointRadius: 3,
+                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointBorderColor: 'rgba(78, 115, 223, 1)',
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                pointHitRadius: 10,
+                pointBorderWidth: 2,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Size (MB)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

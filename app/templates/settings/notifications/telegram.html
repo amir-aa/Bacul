@@ -1,0 +1,84 @@
+<!-- app/templates/settings/notifications/telegram.html -->
+{% extends 'base.html' %}
+
+{% block title %}Telegram Notifications - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Telegram Notifications</h1>
+
+    <div class="row">
+        <div class="col-lg-3">
+            <!-- Settings Navigation -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Settings Menu</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('settings.general') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-cog fa-fw mr-2"></i> General
+                        </a>
+                        <a href="{{ url_for('settings.email') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-envelope fa-fw mr-2"></i> Email
+                        </a>
+                        <a href="{{ url_for('settings.backup') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-save fa-fw mr-2"></i> Backup
+                        </a>
+                        <a href="{{ url_for('settings.restore') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-undo fa-fw mr-2"></i> Restore
+                        </a>
+                        <a href="{{ url_for('settings.director') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-server fa-fw mr-2"></i> Director
+                        </a>
+                        <a href="{{ url_for('settings.security') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-lock fa-fw mr-2"></i> Security
+                        </a>
+                        <a href="{{ url_for('settings.users') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-users fa-fw mr-2"></i> Users
+                        </a>
+                        <a href="{{ url_for('settings.notifications') }}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-bell fa-fw mr-2"></i> Notifications
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('settings.export') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-export fa-fw mr-2"></i> Export Settings
+                        </a>
+                        <a href="{{ url_for('settings.import_settings') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-import fa-fw mr-2"></i> Import Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notifications Navigation -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Notification Channels</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('settings.notifications_email') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-envelope fa-fw mr-2"></i> Email Notifications
+                            {% if settings.notifications.email.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('settings.notifications_web') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-desktop fa-fw mr-2"></i> Web Notifications
+                            {% if settings.notifications.web.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('settings.notifications_sms') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-sms fa-fw mr-2"></i> SMS Notifications
+                            {% if settings.notifications.sms.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>

@@ -1,0 +1,328 @@
+<!-- app/templates/schedules/detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}Schedule: {{ schedule.name }} - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+ <h1 class="h3 mb-4 text-gray-800">Schedule: {{ schedule.name }}</h1>
+
+ <div class="row">
+ <div class="col-lg-8">
+ <div class="card shadow mb-4">
+ <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+ <h6 class="m-0 font-weight-bold text-primary">Schedule Information</h6>
+ <div>
+ <a href="{{ url_for('schedules.index') }}" class="btn btn-secondary btn-sm">
+ <i class="fas fa-arrow-left"></i> Back to Schedules
+ </a>
+ </div>
+ </div>
+ <div class="card-body">
+ <div class="row">
+ <div class="col-md-6">
+ <h6 class="font-weight-bold">Basic Information</h6>
+ <table class="table table-sm">
+ <tr>
+ <th>Name:</th>
+ <td>{{ schedule.name }}</td>
+ </tr>
+ <tr>
+ <th>Description:</th>
+ <td>{{ schedule.description }}</td>
+ </tr>
+ <tr>
+ <th>Created:</th>
+ <td>{{ schedule.created.strftime('%Y-%m-%d') }}</td>
+ </tr>
+ <tr>
+ <th>Status:</th>
+ <td>
+ {% if schedule.is_active %}
+ <span class="badge bg-success">Active</span>
+ {% else %}
+ <span class="badge bg-secondary">Inactive</span>
+ {% endif %}
+ </td>
+ </tr>
+ <tr>
+ <th>Next Run:</th>
+ <td>
+ {% if schedule.is_active %}
+ {{ schedule.next_run.strftime('%Y-%m-%d %H:%M') }}
+ {% else %}
+ <span class="text-muted">N/A</span>
+ {% endif %}
+ </td>
+ </tr>
+ </table>
+ </div>
+ <div class="col-md-6">
+ <h6 class="font-weight-bold">Actions</h6>
+ <div class="d-grid gap-2">
+ <form action="{{ url_for('schedules.toggle_schedule', schedule_id=schedule.scheduleid) }}" method="post" class="d-inline">
+ {% if schedule.is_active %}
+ <button type="submit" class="btn btn-warning btn-block">
+ <i class="fas fa-pause"></i> Deactivate Schedule
+ </button>
+ {% else %}
+ <button type="submit" class="btn btn-success btn-block">
+ <i class="fas fa-play"></i> Activate Schedule
+ </button>
+ {% endif %}
+ </form>
+ 
+ <form action="{{ url_for('schedules.run_now', schedule_id=schedule.scheduleid) }}" method="post" class="d-inline">
+ <button type="submit" class="btn btn-primary btn-block">
+ <i class="fas fa-play-circle"></i> Run Now
+ </button>
+ </form>
+ 
+ <a href="{{ url_for('schedules.edit_schedule', schedule_id=schedule.scheduleid) }}" class="btn btn-info btn-block">
+ <i class="fas fa-edit"></i> Edit Schedule
+ </a>
+ 
+ <a href="{{ url_for('schedules.export_schedule', schedule_id=schedule.scheduleid) }}" class="btn btn-secondary btn-block">
+ <i class="fas fa-file-export"></i> Export Configuration
+ </a>
+ 
+ <button type="button" class="btn btn-danger btn-block" data-bs-toggle="modal" data-bs-target="#deleteScheduleModal">
+ <i class="fas fa-trash"></i> Delete Schedule
+ </button>
+ </div>
+ </div>
+ </div>
+ 
+ <hr>
+ 
+ <h6 class="font-weight-bold">Run Configurations</h6>
+ <div class="table-responsive">
+ <table class="table table-bordered">
+ <thead>
+ <tr>
+ <th>Level</th>
+ <th>Day</th>
+ <th>Time</th>
+ <th>Status</th>
+ </tr>
+ </thead>
+ <tbody>
+ {% for run in schedule.runs %}
+ <tr>
+ <td>
+ <span class="badge {% if run.level == 'Full' %}bg-primary{% elif run.level == 'Differential' %}bg-info{% else %}bg-warning{% endif %}">
+ {{ run.level }}
+ </span>
+ </td>
+ <td>{{ run.day }}</td>
+ <td>{{ run.time }}</td>
+ <td>
+ {% if run.enabled %}
+ <span class="badge bg-success">Enabled</span>
+ {% else %}
+ <span class="badge bg-secondary">Disabled</span>
+ {% endif %}
+ </td>
+ </tr>
+ {% endfor %}
+ </tbody>
+ </table>
+ </div>
+ </div>
+ </div>
+ 
+ <!-- Jobs using this schedule -->
+ <div class="card shadow mb-4">
+ <div class="card-header py-3">
+ <h6 class="m-0 font-weight-bold text-primary">Jobs Using This Schedule</h6>
+ </div>
+ <div class="card-body">
+ <div class="table-responsive">
+ <table class="table table-bordered" id="jobsTable">
+ <thead>
+ <tr>
+ <th>Job Name</th>
+ <th>Client</th>
+ <th>Last Run</th>
+ <th>Status</th>
+ </tr>
+ </thead>
+ <tbody>
+ {% for job in jobs %}
+ <tr>
+ <td>{{ job.name }}</td>
+ <td>{{ job.client }}</td>
+ <td>{{ job.last_run.strftime('%Y-%m-%d %H:%M') }}</td>
+ <td>
+ {% if job.status == 'Completed' %}
+ <span class="badge bg-success">Completed</span>
+ {% elif job.status == 'Failed' %}
+ <span class="badge bg-danger">Failed</span>
+ {% elif job.status == 'Running' %}
+ <span class="badge bg-info">Running</span>
+ {% else %}
+ <span class="badge bg-secondary">{{ job.status }}</span>
+ {% endif %}
+ </td>
+ </tr>
+ {% else %}
+ <tr>
+ <td colspan="4" class="text-center">No jobs are using this schedule.</td>
+ </tr>
+ {% endfor %}
+ </tbody>
+ </table>
+ </div>
+ </div>
+ </div>
+ </div>
+ 
+ <div class="col-lg-4">
+ <!-- Schedule Status Card -->
+ <div class="card shadow mb-4">
+ <div class="card-header py-3">
+ <h6 class="m-0 font-weight-bold text-primary">Schedule Status</h6>
+ </div>
+ <div class="card-body">
+ <div class="text-center">
+ <div class="mb-3">
+ {% if schedule.is_active %}
+ <i class="fas fa-calendar-check fa-5x text-success"></i>
+ {% else %}
+ <i class="fas fa-calendar-times fa-5x text-secondary"></i>
+ {% endif %}
+ </div>
+ <h4 class="font-weight-bold">
+ {% if schedule.is_active %}
+ Active
+ {% else %}
+ Inactive
+ {% endif %}
+ </h4>
+ <p>
+ {% if schedule.is_active %}
+ This schedule is currently active and will run jobs according to the defined schedule.
+ {% else %}
+ This schedule is currently inactive and will not run any jobs.
+ {% endif %}
+ </p>
+ </div>
+ 
+ {% if schedule.is_active %}
+ <hr>
+ 
+ <h6 class="font-weight-bold">Next Scheduled Runs</h6>
+ <ul class="list-group list-group-flush">
+ <li class="list-group-item d-flex justify-content-between align-items-center">
+ Next run:
+ <span class="badge bg-primary">{{ schedule.next_run.strftime('%Y-%m-%d %H:%M') }}</span>
+ </li>
+ <li class="list-group-item d-flex justify-content-between align-items-center">
+ Level:
+ <span class="badge {% if schedule.runs[0].level == 'Full' %}bg-primary{% elif schedule.runs[0].level == 'Differential' %}bg-info{% else %}bg-warning{% endif %}">
+ {{ schedule.runs[0].level }}
+ </span>
+ </li>
+ <li class="list-group-item d-flex justify-content-between align-items-center">
+ Time until next run:
+ <span class="badge bg-secondary">
+ {{ ((schedule.next_run - now).total_seconds() / 60)|int }} minutes
+ </span>
+ </li>
+ </ul>
+ {% endif %}
+ </div>
+ </div>
+ 
+ <!-- Schedule Timeline Card -->
+ <div class="card shadow mb-4">
+ <div class="card-header py-3">
+ <h6 class="m-0 font-weight-bold text-primary">Weekly Schedule</h6>
+ </div>
+ <div class="card-body">
+ <div class="table-responsive">
+ <table class="table table-sm">
+ <thead>
+ <tr>
+ <th>Day</th>
+ <th>Type</th>
+ <th>Time</th>
+ </tr>
+ </thead>
+ <tbody>
+ {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
+ {% set found = false %}
+ {% for run in schedule.runs %}
+ {% if run.day == day %}
+ <tr>
+ <td>{{ day }}</td>
+ <td>
+ <span class="badge {% if run.level == 'Full' %}bg-primary{% elif run.level == 'Differential' %}bg-info{% else %}bg-warning{% endif %}">
+ {{ run.level }}
+ </span>
+ </td>
+ <td>{{ run.time }}</td>
+ </tr>
+ {% set found = true %}
+ {% endif %}
+ {% endfor %}
+ {% if not found %}
+ <tr>
+ <td>{{ day }}</td>
+ <td colspan="2" class="text-muted">No backup scheduled</td>
+ </tr>
+ {% endif %}
+ {% endfor %}
+ </tbody>
+ </table>
+ </div>
+ 
+ {% if schedule.runs|selectattr('day', 'equalto', 'Hourly')|list|length > 0 %}
+ <div class="alert alert-info mt-3">
+ <i class="fas fa-info-circle"></i> This schedule includes hourly runs.
+ </div>
+ {% endif %}
+ 
+ {% if schedule.runs|selectattr('day', 'equalto', '1st')|list|length > 0 %}
+ <div class="alert alert-info mt-3">
+ <i class="fas fa-info-circle"></i> This schedule includes monthly runs on the 1st day.
+ </div>
+ {% endif %}
+ </div>
+ </div>
+ </div>
+ </div>
+ 
+ <!-- Delete Schedule Modal -->
+ <div class="modal fade" id="deleteScheduleModal" tabindex="-1" aria-labelledby="deleteScheduleModalLabel" aria-hidden="true">
+ <div class="modal-dialog">
+ <div class="modal-content">
+ <div class="modal-header">
+ <h5 class="modal-title" id="deleteScheduleModalLabel">Confirm Delete</h5>
+ <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+ </div>
+ <div class="modal-body">
+ Are you sure you want to delete schedule <strong>{{ schedule.name }}</strong>?
+ This action cannot be undone.
+ </div>
+ <div class="modal-footer">
+ <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+ <form action="{{ url_for('schedules.delete_schedule', schedule_id=schedule.scheduleid) }}" method="post">
+ <button type="submit" class="btn btn-danger">Delete</button>
+ </form>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+ $('#jobsTable').DataTable({
+ order: [[2, 'desc']]
+ });
+});
+</script>
+{% endblock %}

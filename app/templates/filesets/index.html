@@ -1,0 +1,182 @@
+<!-- app/templates/filesets/index.html -->
+{% extends 'base.html' %}
+
+{% block title %}FileSets - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">FileSets</h1>
+
+    <!-- Statistics Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total FileSets</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ filesets|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-folder fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Active FileSets</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ filesets|selectattr('is_active', 'equalto', true)|list|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                With Compression</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ filesets|selectattr('compression', 'equalto', true)|list|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-archive fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Recently Created</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ filesets|selectattr('createtime', 'ge', now - timedelta(days=30))|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-plus fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FileSets Table Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">All FileSets</h6>
+            <div>
+                <a href="{{ url_for('filesets.add_fileset') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Add FileSet
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="filesetsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Created</th>
+                            <th>Include Paths</th>
+                            <th>Compression</th>
+                            <th>Signature</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fileset in filesets %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('filesets.detail', fileset_id=fileset.filesetid) }}">
+                                    {{ fileset.fileset }}
+                                </a>
+                            </td>
+                            <td>{{ fileset.description }}</td>
+                            <td>{{ fileset.createtime.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ fileset.include_paths|length }} paths</td>
+                            <td>
+                                {% if fileset.compression %}
+                                <span class="badge bg-success">Enabled</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Disabled</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ fileset.signature }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('filesets.detail', fileset_id=fileset.filesetid) }}" class="btn btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('filesets.edit_fileset', fileset_id=fileset.filesetid) }}" class="btn btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('filesets.export_fileset', fileset_id=fileset.filesetid) }}" class="btn btn-primary">
+                                        <i class="fas fa-file-export"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteFileSetModal{{ fileset.filesetid }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Delete FileSet Modal -->
+                                <div class="modal fade" id="deleteFileSetModal{{ fileset.filesetid }}" tabindex="-1" aria-labelledby="deleteFileSetModalLabel{{ fileset.filesetid }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteFileSetModalLabel{{ fileset.filesetid }}">Confirm Delete</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to delete FileSet <strong>{{ fileset.fileset }}</strong>?
+                                                This action cannot be undone.
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{{ url_for('filesets.delete_fileset', fileset_id=fileset.filesetid) }}" method="post">
+                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#filesetsTable').DataTable({
+        order: [[2, 'desc']]
+    });
+});
+</script>
+{% endblock %}

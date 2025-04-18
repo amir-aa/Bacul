@@ -1,0 +1,65 @@
+<!-- app/templates/storage/index.html -->
+{% extends 'base.html' %}
+
+{% block title %}Storage Devices - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Storage Devices</h1>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Storage Devices</h6>
+            <a href="{{ url_for('storage.add_storage') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Add Storage
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="storageTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for storage in storages %}
+                        <tr>
+                            <td>{{ storage.name }}</td>
+                            <td>{{ "Autochanger" if storage.autochanger else "Device" }}</td>
+                            <td>
+                                {% if storage.name in storage_status %}
+                                    {% if "is available" in storage_status[storage.name] %}
+                                    <span class="badge badge-success">Available</span>
+                                    {% else %}
+                                    <span class="badge badge-warning">Not Available</span>
+                                    {% endif %}
+                                {% else %}
+                                <span class="badge badge-secondary">Unknown</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('storage.storage_status', storage_id=storage.storageid) }}" class="btn btn-info btn-sm">
+                                    <i class="fas fa-info-circle"></i> Status
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#storageTable').DataTable();
+});
+</script>
+{% endblock %}

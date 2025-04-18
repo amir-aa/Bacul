@@ -1,0 +1,266 @@
+<!-- app/templates/clients/run_job.html -->
+{% extends 'base.html' %}
+
+{% block title %}Run Backup Job - {{ client.name }} - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Run Backup Job for {{ client.name }}</h1>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Job Parameters</h6>
+            <div>
+                <a href="{{ url_for('clients.detail', client_id=client.clientid) }}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Back to Client
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="job_name" class="form-label">Job Name</label>
+                            <input type="text" class="form-control" id="job_name" name="job_name" value="{{ client.name }}-backup" required>
+                            <small class="text-muted">Enter a name for this backup job</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="fileset_name" class="form-label">FileSet</label>
+                            <select class="form-select" id="fileset_name" name="fileset_name" required>
+                                {% for fileset in filesets %}
+                                <option value="{{ fileset.fileset }}">{{ fileset.fileset }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Select which files to back up</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="level" class="form-label">Backup Level</label>
+                            <select class="form-select" id="level" name="level">
+                                <option value="Incremental">Incremental</option>
+                                <option value="Differential">Differential</option>
+                                <option value="Full">Full</option>
+                            </select>
+                            <small class="text-muted">Select the backup level</small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="pool_name" class="form-label">Pool</label>
+                            <select class="form-select" id="pool_name" name="pool_name" required>
+                                {% for pool in pools %}
+                                <option value="{{ pool.name }}">{{ pool.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Select which media pool to use</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="storage" class="form-label">Storage</label>
+                            <select class="form-select" id="storage" name="storage">
+                                {% for storage in storages %}
+                                <option value="{{ storage.name }}">{{ storage.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Select the storage device</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="priority" class="form-label">Priority</label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="10">Normal (10)</option>
+                                <option value="5">Low (5)</option>
+                                <option value="15">High (15)</option>
+                            </select>
+                            <small class="text-muted">Select the job priority</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="accurate" name="accurate">
+                        <label class="form-check-label" for="accurate">
+                            Accurate (verify checksums)
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="when" class="form-label">When to run</label>
+                    <select class="form-select" id="when" name="when">
+                        <option value="now">Now</option>
+                        <option value="schedule">Schedule for later</option>
+                    </select>
+                </div>
+                
+                <div id="scheduleOptions" class="mb-3 d-none">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="scheduleDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="scheduleDate" name="schedule_date">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="scheduleTime" class="form-label">Time</label>
+                            <input type="time" class="form-control" id="scheduleTime" name="schedule_time">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-play"></i> Run Backup
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Recent Jobs for This Client -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Recent Jobs for {{ client.name }}</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="recentJobsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Job ID</th>
+                            <th>Name</th>
+                            <th>Level</th>
+                            <th>Start Time</th>
+                            <th>Status</th>
+                            <th>Files</th>
+                            <th>Size</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in recent_jobs %}
+                        <tr>
+                            <td>{{ job.jobid }}</td>
+                            <td>{{ job.name }}</td>
+                            <td>
+                                {% if job.level == 'F' %}
+                                <span class="badge bg-primary">Full</span>
+                                {% elif job.level == 'I' %}
+                                <span class="badge bg-success">Incremental</span>
+                                {% elif job.level == 'D' %}
+                                <span class="badge bg-info">Differential</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ job.level }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ job.starttime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                {% if job.jobstatus == 'T' %}
+                                <span class="badge bg-success">Success</span>
+                                {% elif job.jobstatus == 'E' %}
+                                <span class="badge bg-danger">Error</span>
+                                {% elif job.jobstatus == 'R' %}
+                                <span class="badge bg-info">Running</span>
+                                {% elif job.jobstatus == 'C' %}
+                                <span class="badge bg-warning">Created</span>
+                                {% elif job.jobstatus == 'A' %}
+                                <span class="badge bg-secondary">Canceled</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ job.jobstatus }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ job.jobfiles }}</td>
+                            <td>{{ format_bytes(job.jobbytes) }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('jobs.job_status', job_id=job.jobid) }}" class="btn btn-info btn-sm" title="View Details">
+                                        <i class="fas fa-info-circle"></i>
+                                    </a>
+                                    <button class="btn btn-primary btn-sm clone-job" data-jobid="{{ job.jobid }}" title="Clone Job Settings">
+                                        <i class="fas fa-clone"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable
+    $('#recentJobsTable').DataTable({
+        "order": [[0, "desc"]],
+        "pageLength": 5
+    });
+    
+    // Show/hide schedule options based on when selection
+    const whenSelect = document.getElementById('when');
+    const scheduleOptions = document.getElementById('scheduleOptions');
+    
+    whenSelect.addEventListener('change', function() {
+        if (this.value === 'schedule') {
+            scheduleOptions.classList.remove('d-none');
+        } else {
+            scheduleOptions.classList.add('d-none');
+        }
+    });
+    
+    // Update job name when level changes
+    document.getElementById('level').addEventListener('change', function() {
+        const level = this.value;
+        const clientName = "{{ client.name }}";
+        document.getElementById('job_name').value = clientName + '-' + level;
+    });
+    
+    // Clone job settings
+    document.querySelectorAll('.clone-job').forEach(button => {
+        button.addEventListener('click', function() {
+            const jobId = this.getAttribute('data-jobid');
+            
+            // In a real app, you'd fetch job details via AJAX
+            // For this example, we'll just show an alert
+            alert(`Would clone settings from job ${jobId} in a real application`);
+            
+            // Simulate filling the form with job details
+            // This would be replaced with actual data from an AJAX request
+            document.getElementById('job_name').value = "{{ client.name }}-clone";
+            document.getElementById('level').value = "Full";
+            document.getElementById('priority').value = "10";
+            document.getElementById('accurate').checked = true;
+        });
+    });
+    
+    // Set default date and time for scheduling
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Format date as YYYY-MM-DD
+    const formatDate = date => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    
+    // Format time as HH:MM
+    const formatTime = date => {
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
+    };
+    
+    document.getElementById('scheduleDate').value = formatDate(tomorrow);
+    document.getElementById('scheduleTime').value = formatTime(today);
+});
+</script>
+{% endblock %}

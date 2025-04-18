@@ -1,0 +1,273 @@
+<!-- app/templates/settings/notifications/index.html -->
+{% extends 'base.html' %}
+
+{% block title %}Notification Settings - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Notification Settings</h1>
+
+    <div class="row">
+        <div class="col-lg-3">
+            <!-- Settings Navigation -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Settings Menu</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('settings.general') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-cog fa-fw mr-2"></i> General
+                        </a>
+                        <a href="{{ url_for('settings.email') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-envelope fa-fw mr-2"></i> Email
+                        </a>
+                        <a href="{{ url_for('settings.backup') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-save fa-fw mr-2"></i> Backup
+                        </a>
+                        <a href="{{ url_for('settings.restore') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-undo fa-fw mr-2"></i> Restore
+                        </a>
+                        <a href="{{ url_for('settings.director') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-server fa-fw mr-2"></i> Director
+                        </a>
+                        <a href="{{ url_for('settings.security') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-lock fa-fw mr-2"></i> Security
+                        </a>
+                        <a href="{{ url_for('settings.users') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-users fa-fw mr-2"></i> Users
+                        </a>
+                        <a href="{{ url_for('settings.notifications') }}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-bell fa-fw mr-2"></i> Notifications
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('settings.export') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-export fa-fw mr-2"></i> Export Settings
+                        </a>
+                        <a href="{{ url_for('settings.import_settings') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-import fa-fw mr-2"></i> Import Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notifications Navigation -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Notification Channels</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('settings.notifications_email') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-envelope fa-fw mr-2"></i> Email Notifications
+                            {% if settings.notifications.email.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('settings.notifications_web') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-desktop fa-fw mr-2"></i> Web Notifications
+                            {% if settings.notifications.web.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('settings.notifications_sms') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-sms fa-fw mr-2"></i> SMS Notifications
+                            {% if settings.notifications.sms.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('settings.notifications_slack') }}" class="list-group-item list-group-item-action">
+                            <i class="fab fa-slack fa-fw mr-2"></i> Slack Notifications
+                            {% if settings.notifications.slack.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('settings.notifications_telegram') }}" class="list-group-item list-group-item-action">
+                            <i class="fab fa-telegram-plane fa-fw mr-2"></i> Telegram Notifications
+                            {% if settings.notifications.telegram.enabled %}
+                            <span class="badge bg-success float-end">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-secondary float-end">Disabled</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <!-- Notification Overview Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Notification Channels Overview</h6>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle"></i> Configure how and when Bacula Dashboard sends notifications about backup jobs, errors, and system events.
+                    </div>
+
+                    <div class="row">
+                        <!-- Email Card -->
+                        <div class="col-xl-4 col-md-6 mb-4">
+                            <div class="card border-left-primary h-100">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="icon-circle bg-primary text-white">
+                                            <i class="fas fa-envelope"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h6 class="font-weight-bold mb-0">Email Notifications</h6>
+                                            {% if settings.notifications.email.enabled %}
+                                            <span class="badge bg-success">Enabled</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">Disabled</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <p class="text-muted mb-0">Send notifications via email to administrators and users.</p>
+                                </div>
+                                <div class="card-footer bg-light">
+                                    <a href="{{ url_for('settings.notifications_email') }}" class="btn btn-primary btn-sm w-100">Configure</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Web Card -->
+                        <div class="col-xl-4 col-md-6 mb-4">
+                            <div class="card border-left-success h-100">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="icon-circle bg-success text-white">
+                                            <i class="fas fa-desktop"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h6 class="font-weight-bold mb-0">Web Notifications</h6>
+                                            {% if settings.notifications.web.enabled %}
+                                            <span class="badge bg-success">Enabled</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">Disabled</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <p class="text-muted mb-0">Show notifications in the dashboard for logged-in users.</p>
+                                </div>
+                                <div class="card-footer bg-light">
+                                    <a href="{{ url_for('settings.notifications_web') }}" class="btn btn-success btn-sm w-100">Configure</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SMS Card -->
+                        <div class="col-xl-4 col-md-6 mb-4">
+                            <div class="card border-left-warning h-100">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="icon-circle bg-warning text-white">
+                                            <i class="fas fa-sms"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h6 class="font-weight-bold mb-0">SMS Notifications</h6>
+                                            {% if settings.notifications.sms.enabled %}
+                                            <span class="badge bg-success">Enabled</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">Disabled</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <p class="text-muted mb-0">Send SMS alerts for critical events using Twilio or other providers.</p>
+                                </div>
+                                <div class="card-footer bg-light">
+                                    <a href="{{ url_for('settings.notifications_sms') }}" class="btn btn-warning btn-sm w-100">Configure</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slack Card -->
+                        <div class="col-xl-4 col-md-6 mb-4">
+                            <div class="card border-left-info h-100">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="icon-circle bg-info text-white">
+                                            <i class="fab fa-slack"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h6 class="font-weight-bold mb-0">Slack Notifications</h6>
+                                            {% if settings.notifications.slack.enabled %}
+                                            <span class="badge bg-success">Enabled</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">Disabled</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <p class="text-muted mb-0">Send notifications to Slack channels using webhooks.</p>
+                                </div>
+                                <div class="card-footer bg-light">
+                                    <a href="{{ url_for('settings.notifications_slack') }}" class="btn btn-info btn-sm w-100">Configure</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Telegram Card -->
+                        <div class="col-xl-4 col-md-6 mb-4">
+                            <div class="card border-left-danger h-100">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="icon-circle bg-danger text-white">
+                                            <i class="fab fa-telegram-plane"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h6 class="font-weight-bold mb-0">Telegram Notifications</h6>
+                                            {% if settings.notifications.telegram.enabled %}
+                                            <span class="badge bg-success">Enabled</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">Disabled</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <p class="text-muted mb-0">Send notifications to Telegram users or groups using bots.</p>
+                                </div>
+                                <div class="card-footer bg-light">
+                                    <a href="{{ url_for('settings.notifications_telegram') }}" class="btn btn-danger btn-sm w-100">Configure</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+.icon-circle {
+    height: 40px;
+    width: 40px;
+    border-radius: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,638 @@
+<!-- app/templates/clients/status.html -->
+{% extends 'base.html' %}
+
+{% block title %}Client Status - {{ client.name }} - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Client Status: {{ client.name }}</h1>
+    
+    <div class="row">
+        <!-- Status Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-{{ 'success' if client.status == 'online' else 'danger' }} shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-{{ 'success' if client.status == 'online' else 'danger' }} text-uppercase mb-1">
+                                Status</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ 'Online' if client.status == 'online' else 'Offline' }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-{{ 'check-circle' if client.status == 'online' else 'times-circle' }} fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Version Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Version</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ client_info.version if client_info else 'Unknown' }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-code-branch fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Last Contact Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Last Contact</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ client_info.last_contact.strftime('%Y-%m-%d %H:%M:%S') if client_info and client_info.last_contact else 'Never' }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Client Information -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Client Information</h6>
+                    <div>
+                        <button id="refreshStatus" class="btn btn-primary btn-sm">
+                            <i class="fas fa-sync-alt"></i> Refresh Status
+                        </button>
+                        <a href="{{ url_for('clients.detail', client_id=client.clientid) }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Back to Client
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="statusLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3">Querying client status...</p>
+                    </div>
+                    
+                    <div id="statusContent" class="d-none">
+                        <table class="table table-bordered">
+                            <tr>
+                                <th width="30%">Name</th>
+                                <td>{{ client.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Address</th>
+                                <td>{{ client.address }}</td>
+                            </tr>
+                            <tr>
+                                <th>FD Port</th>
+                                <td>{{ client.fdport }}</td>
+                            </tr>
+                            <tr>
+                                <th>Version</th>
+                                <td id="clientVersion">{{ client_info.version if client_info else 'Unknown' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Operating System</th>
+                                <td id="clientOS">{{ client_info.os if client_info else 'Unknown' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Architecture</th>
+                                <td id="clientArch">{{ client_info.arch if client_info else 'Unknown' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Started</th>
+                                <td id="clientStarted">{{ client_info.started.strftime('%Y-%m-%d %H:%M:%S') if client_info and client_info.started else 'Unknown' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Jobs Running</th>
+                                <td id="clientJobs">{{ client_info.jobs_running if client_info else '0' }}</td>
+                            </tr>
+                        </table>
+                        
+                        <div class="mt-4">
+                            <h5>Actions</h5>
+                            <div class="btn-group">
+                                <button class="btn btn-warning" id="testConnection">
+                                    <i class="fas fa-plug"></i> Test Connection
+                                </button>
+                                <button class="btn btn-info" id="viewLogs">
+                                    <i class="fas fa-file-alt"></i> View Logs
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="statusError" class="d-none">
+                        <div class="alert alert-danger">
+                            <h5><i class="fas fa-exclamation-triangle"></i> Connection Error</h5>
+                            <p>Could not connect to the client. Please check:</p>
+                            <ul>
+                                <li>The client machine is powered on and connected to the network</li>
+                                <li>The Bacula File Daemon is running on the client</li>
+                                <li>The client address ({{ client.address }}) and port ({{ client.fdport }}) are correct</li>
+                                <li>There are no firewall rules blocking the connection</li>
+                            </ul>
+                            <p>You can try to:</p>
+                            <button class="btn btn-primary" id="retryConnection">
+                                <i class="fas fa-redo"></i> Retry Connection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Resource Usage -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Resource Usage</h6>
+                </div>
+                <div class="card-body">
+                    <div id="resourceLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3">Fetching resource information...</p>
+                    </div>
+                    
+                    <div id="resourceContent" class="d-none">
+                        <!-- CPU Usage -->
+                        <h5 class="mb-2">CPU Usage</h5>
+                        <div class="progress mb-4" style="height: 25px;">
+                            <div id="cpuProgress" class="progress-bar" role="progressbar" style="width: {{ client_info.cpu_usage if client_info else '0' }}%;" 
+                                aria-valuenow="{{ client_info.cpu_usage if client_info else '0' }}" aria-valuemin="0" aria-valuemax="100">
+                                <span id="cpuText">{{ client_info.cpu_usage if client_info else '0' }}%</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Memory Usage -->
+                        <h5 class="mb-2">Memory Usage</h5>
+                        <div class="progress mb-4" style="height: 25px;">
+                            <div id="memoryProgress" class="progress-bar bg-info" role="progressbar" style="width: {{ client_info.memory_usage if client_info else '0' }}%;" 
+                                aria-valuenow="{{ client_info.memory_usage if client_info else '0' }}" aria-valuemin="0" aria-valuemax="100">
+                                <span id="memoryText">{{ client_info.memory_usage if client_info else '0' }}%</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Disk Usage -->
+                        <h5 class="mb-2">Disk Usage</h5>
+                        <div id="diskUsage">
+                            {% if client_info and client_info.disk_usage %}
+                                {% for disk in client_info.disk_usage %}
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span>{{ disk.mount }}</span>
+                                        <span>{{ disk.used }} / {{ disk.total }} ({{ disk.percent }}%)</span>
+                                    </div>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ disk.percent }}%;" 
+                                            aria-valuenow="{{ disk.percent }}" aria-valuemin="0" aria-valuemax="100">
+                                            {{ disk.percent }}%
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span>/ (root)</span>
+                                        <span>Unknown</span>
+                                    </div>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-warning" role="progressbar" style="width: 0%;" 
+                                            aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                            0%
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Network Usage -->
+                        <h5 class="mb-2 mt-4">Network Usage</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card border-left-primary shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                    Incoming</div>
+                                                <div id="networkIn" class="h5 mb-0 font-weight-bold text-gray-800">
+                                                    {{ client_info.network_in if client_info else '0 KB/s' }}
+                                                </div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-arrow-down fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-left-success shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                    Outgoing</div>
+                                                <div id="networkOut" class="h5 mb-0 font-weight-bold text-gray-800">
+                                                    {{ client_info.network_out if client_info else '0 KB/s' }}
+                                                </div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-arrow-up fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="resourceError" class="d-none">
+                        <div class="alert alert-warning">
+                            <h5><i class="fas fa-exclamation-circle"></i> Resource Information Unavailable</h5>
+                            <p>Could not retrieve resource usage information from the client.</p>
+                            <p>This feature may require additional configuration or plugins on the client machine.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Running Jobs -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Running Jobs</h6>
+        </div>
+        <div class="card-body">
+            <div id="jobsLoading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3">Fetching running jobs...</p>
+            </div>
+            
+            <div id="jobsContent" class="d-none">
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="runningJobsTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Job ID</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Level</th>
+                                <th>Start Time</th>
+                                <th>Files</th>
+                                <th>Bytes</th>
+                                <th>Status</th>
+                                <th>Progress</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if running_jobs %}
+                                {% for job in running_jobs %}
+                                <tr>
+                                    <td>{{ job.jobid }}</td>
+                                    <td>{{ job.name }}</td>
+                                    <td>{{ job.type }}</td>
+                                    <td>
+                                        {% if job.level == 'F' %}
+                                        <span class="badge bg-primary">Full</span>
+                                        {% elif job.level == 'I' %}
+                                        <span class="badge bg-success">Incremental</span>
+                                        {% elif job.level == 'D' %}
+                                        <span class="badge bg-info">Differential</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ job.level }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ job.starttime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>{{ job.jobfiles }}</td>
+                                    <td>{{ format_bytes(job.jobbytes) }}</td>
+                                    <td>
+                                        <span class="badge bg-info">Running</span>
+                                    </td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" 
+                                                style="width: {{ job.progress }}%;" aria-valuenow="{{ job.progress }}" aria-valuemin="0" aria-valuemax="100">
+                                                {{ job.progress }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm cancel-job" data-jobid="{{ job.jobid }}">
+                                            <i class="fas fa-stop"></i> Cancel
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="10" class="text-center">No jobs currently running for this client.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="jobsError" class="d-none">
+                <div class="alert alert-warning">
+                    <h5><i class="fas fa-exclamation-circle"></i> Job Information Unavailable</h5>
+                    <p>Could not retrieve running job information.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Client Logs Modal -->
+<div class="modal fade" id="clientLogsModal" tabindex="-1" aria-labelledby="clientLogsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="clientLogsModalLabel">Client Logs - {{ client.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="logLevel" class="form-label">Log Level</label>
+                    <select class="form-select" id="logLevel">
+                        <option value="all">All</option>
+                        <option value="info">Info</option>
+                        <option value="warning">Warning</option>
+                        <option value="error">Error</option>
+                        <option value="debug">Debug</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="logDate" class="form-label">Date</label>
+                    <input type="date" class="form-control" id="logDate">
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="m-0 font-weight-bold">Log Output</h6>
+                    </div>
+                    <div class="card-body">
+                        <pre id="logOutput" class="bg-light p-3" style="max-height: 400px; overflow-y: auto;">Loading logs...</pre>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="refreshLogs">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Job Modal -->
+<div class="modal fade" id="cancelJobModal" tabindex="-1" aria-labelledby="cancelJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelJobModalLabel">Cancel Job</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this job?</p>
+                <p>Job ID: <span id="cancelJobId"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <form id="cancelJobForm" method="post" action="">
+                    <button type="submit" class="btn btn-danger">Cancel Job</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check client status on page load
+    checkClientStatus();
+    
+    // Refresh status button
+    document.getElementById('refreshStatus').addEventListener('click', function() {
+        checkClientStatus();
+    });
+    
+    // Retry connection button
+    document.getElementById('retryConnection').addEventListener('click', function() {
+        checkClientStatus();
+    });
+    
+    // Test connection button
+    document.getElementById('testConnection').addEventListener('click', function() {
+        testClientConnection();
+    });
+    
+    // View logs button
+    document.getElementById('viewLogs').addEventListener('click', function() {
+        const clientLogsModal = new bootstrap.Modal(document.getElementById('clientLogsModal'));
+        clientLogsModal.show();
+        loadClientLogs();
+    });
+    
+    // Refresh logs button
+    document.getElementById('refreshLogs').addEventListener('click', function() {
+        loadClientLogs();
+    });
+    
+    // Log level and date filters
+    document.getElementById('logLevel').addEventListener('change', loadClientLogs);
+    document.getElementById('logDate').addEventListener('change', loadClientLogs);
+    
+    // Set default log date to today
+    const today = new Date();
+    const formatDate = date => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    document.getElementById('logDate').value = formatDate(today);
+    
+    // Cancel job buttons
+    document.querySelectorAll('.cancel-job').forEach(button => {
+        button.addEventListener('click', function() {
+            const jobId = this.getAttribute('data-jobid');
+            document.getElementById('cancelJobId').textContent = jobId;
+            document.getElementById('cancelJobForm').action = `/jobs/${jobId}/cancel`;
+            const cancelJobModal = new bootstrap.Modal(document.getElementById('cancelJobModal'));
+            cancelJobModal.show();
+        });
+    });
+    
+    // Check client status periodically
+    setInterval(checkClientStatus, 60000); // Every 60 seconds
+    
+    function checkClientStatus() {
+        // Show loading states
+        document.getElementById('statusLoading').classList.remove('d-none');
+        document.getElementById('statusContent').classList.add('d-none');
+        document.getElementById('statusError').classList.add('d-none');
+        
+        document.getElementById('resourceLoading').classList.remove('d-none');
+        document.getElementById('resourceContent').classList.add('d-none');
+        document.getElementById('resourceError').classList.add('d-none');
+        
+        document.getElementById('jobsLoading').classList.remove('d-none');
+        document.getElementById('jobsContent').classList.add('d-none');
+        document.getElementById('jobsError').classList.add('d-none');
+        
+        // In a real application, you would fetch this data from the server
+        // For this example, we'll simulate a successful response after a delay
+        setTimeout(function() {
+            // Simulate client status
+            const isOnline = Math.random() > 0.2; // 80% chance of being online
+            
+            if (isOnline) {
+                // Update status content
+                document.getElementById('statusLoading').classList.add('d-none');
+                document.getElementById('statusContent').classList.remove('d-none');
+                
+                // Update resource content
+                document.getElementById('resourceLoading').classList.add('d-none');
+                document.getElementById('resourceContent').classList.remove('d-none');
+                
+                // Update CPU and memory usage with random values
+                const cpuUsage = Math.floor(Math.random() * 100);
+                const memoryUsage = Math.floor(Math.random() * 100);
+                
+                document.getElementById('cpuProgress').style.width = `${cpuUsage}%`;
+                document.getElementById('cpuProgress').setAttribute('aria-valuenow', cpuUsage);
+                document.getElementById('cpuText').textContent = `${cpuUsage}%`;
+                
+                document.getElementById('memoryProgress').style.width = `${memoryUsage}%`;
+                document.getElementById('memoryProgress').setAttribute('aria-valuenow', memoryUsage);
+                document.getElementById('memoryText').textContent = `${memoryUsage}%`;
+                
+                // Update network usage
+                const networkIn = `${Math.floor(Math.random() * 1000)} KB/s`;
+                const networkOut = `${Math.floor(Math.random() * 500)} KB/s`;
+                
+                document.getElementById('networkIn').textContent = networkIn;
+                document.getElementById('networkOut').textContent = networkOut;
+                
+                // Update disk usage
+                let diskHtml = '';
+                const diskCount = Math.floor(Math.random() * 3) + 1;
+                
+                for (let i = 0; i < diskCount; i++) {
+                    const mount = i === 0 ? '/ (root)' : i === 1 ? '/home' : '/var';
+                    const percent = Math.floor(Math.random() * 100);
+                    const used = `${Math.floor(percent * 0.5)} GB`;
+                    const total = `${Math.floor(50)} GB`;
+                    
+                    diskHtml += `
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>${mount}</span>
+                            <span>${used} / ${total} (${percent}%)</span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: ${percent}%;" 
+                                aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100">
+                                ${percent}%
+                            </div>
+                        </div>
+                    </div>`;
+                }
+                
+                document.getElementById('diskUsage').innerHTML = diskHtml;
+                
+                // Update jobs content
+                document.getElementById('jobsLoading').classList.add('d-none');
+                document.getElementById('jobsContent').classList.remove('d-none');
+            } else {
+                // Show error states
+                document.getElementById('statusLoading').classList.add('d-none');
+                document.getElementById('statusError').classList.remove('d-none');
+                
+                document.getElementById('resourceLoading').classList.add('d-none');
+                document.getElementById('resourceError').classList.remove('d-none');
+                
+                document.getElementById('jobsLoading').classList.add('d-none');
+                document.getElementById('jobsError').classList.remove('d-none');
+            }
+        }, 1500);
+    }
+    
+    function testClientConnection() {
+        // In a real application, you would test the connection to the client
+        // For this example, we'll just show an alert
+        alert('Connection test would be performed in a real application');
+    }
+    
+    function loadClientLogs() {
+        const logLevel = document.getElementById('logLevel').value;
+        const logDate = document.getElementById('logDate').value;
+        
+        // Show loading state
+        document.getElementById('logOutput').textContent = 'Loading logs...';
+        
+        // In a real application, you would fetch logs from the server
+        // For this example, we'll simulate a response after a delay
+        setTimeout(function() {
+            // Generate sample logs based on level and date
+            let logs = '';
+            
+            if (logLevel === 'all' || logLevel === 'info') {
+                logs += `${logDate} 08:15:22 bacula-fd: Info: Starting Bacula File Daemon\n`;
+                logs += `${logDate} 08:15:23 bacula-fd: Info: Daemon started successfully\n`;
+            }
+            
+            if (logLevel === 'all' || logLevel === 'warning') {
+                logs += `${logDate} 09:32:45 bacula-fd: Warning: File changed during backup: /var/log/syslog\n`;
+            }
+            
+            if (logLevel === 'all' || logLevel === 'error') {
+                logs += `${logDate} 10:45:12 bacula-fd: Error: Could not open file /etc/shadow for backup\n`;
+            }
+            
+            if (logLevel === 'all' || logLevel === 'debug') {
+                logs += `${logDate} 08:15:22 bacula-fd: Debug: Checking configuration file\n`;
+                logs += `${logDate} 08:15:22 bacula-fd: Debug: Configuration file OK\n`;
+                logs += `${logDate} 08:15:23 bacula-fd: Debug: Binding to port 9102\n`;
+            }
+            
+            // Update log output
+            document.getElementById('logOutput').textContent = logs || 'No logs found for the selected filters.';
+        }, 1000);
+    }
+});
+</script>
+{% endblock %}

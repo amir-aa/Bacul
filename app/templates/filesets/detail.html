@@ -1,0 +1,200 @@
+<!-- app/templates/filesets/detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}FileSet: {{ fileset.fileset }} - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">FileSet: {{ fileset.fileset }}</h1>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">FileSet Information</h6>
+                    <div>
+                        <a href="{{ url_for('filesets.index') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Back to FileSets
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold">Basic Information</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Name:</th>
+                                    <td>{{ fileset.fileset }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Description:</th>
+                                    <td>{{ fileset.description }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Created:</th>
+                                    <td>{{ fileset.createtime.strftime('%Y-%m-%d %H:%M') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>MD5 Hash:</th>
+                                    <td><small class="text-muted">{{ fileset.md5 }}</small></td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td>
+                                        {% if fileset.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold">Options</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Compression:</th>
+                                    <td>
+                                        {% if fileset.compression %}
+                                        <span class="badge bg-success">Enabled</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Disabled</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Signature:</th>
+                                    <td>{{ fileset.signature }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Include Count:</th>
+                                    <td>{{ fileset.include_paths|length }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Exclude Count:</th>
+                                    <td>{{ fileset.exclude_paths|length }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold">Include Paths</h6>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush">
+                                        {% for path in fileset.include_paths %}
+                                        <li class="list-group-item bg-light">{{ path }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold">Exclude Paths</h6>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush">
+                                        {% for path in fileset.exclude_paths %}
+                                        <li class="list-group-item bg-light">{{ path }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('filesets.export_fileset', fileset_id=fileset.filesetid) }}" class="btn btn-primary me-md-2">
+                            <i class="fas fa-file-export"></i> Export Configuration
+                        </a>
+                        <a href="{{ url_for('filesets.edit_fileset', fileset_id=fileset.filesetid) }}" class="btn btn-warning me-md-2">
+                            <i class="fas fa-edit"></i> Edit FileSet
+                        </a>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteFileSetModal">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- FileSet Usage Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">FileSet Usage</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-folder-open fa-5x text-primary"></i>
+                        </div>
+                        <p>This FileSet is used in the following jobs:</p>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">Daily-Backup</li>
+                            <li class="list-group-item">Weekly-Full</li>
+                            <li class="list-group-item">Monthly-Archive</li>
+                        </ul>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="small text-muted">
+                        Last used: {{ (fileset.createtime + timedelta(days=random.randint(1, 10))).strftime('%Y-%m-%d') }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="#" class="btn btn-info btn-block">
+                            <i class="fas fa-clone"></i> Clone FileSet
+                        </a>
+                        <a href="#" class="btn btn-success btn-block">
+                            <i class="fas fa-play"></i> Run Backup with This FileSet
+                        </a>
+                        <a href="#" class="btn btn-secondary btn-block">
+                            <i class="fas fa-list-check"></i> Verify FileSet Paths
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete FileSet Modal -->
+    <div class="modal fade" id="deleteFileSetModal" tabindex="-1" aria-labelledby="deleteFileSetModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteFileSetModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete FileSet <strong>{{ fileset.fileset }}</strong>?
+                    This action cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{{ url_for('filesets.delete_fileset', fileset_id=fileset.filesetid) }}" method="post">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

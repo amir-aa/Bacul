@@ -1,0 +1,258 @@
+<!-- app/templates/schedules/add_schedule.html -->
+{% extends 'base.html' %}
+
+{% block title %}Add Schedule - Bacula Dashboard{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+.run-config {
+ background-color: #f8f9fc;
+ padding: 15px;
+ border-radius: 5px;
+ margin-bottom: 15px;
+ border: 1px solid #e3e6f0;
+}
+.remove-run {
+ cursor: pointer;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+ <h1 class="h3 mb-4 text-gray-800">Add New Schedule</h1>
+
+ <div class="row">
+ <div class="col-lg-8">
+ <div class="card shadow mb-4">
+ <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+ <h6 class="m-0 font-weight-bold text-primary">Schedule Configuration</h6>
+ <div>
+ <a href="{{ url_for('schedules.index') }}" class="btn btn-secondary btn-sm">
+ <i class="fas fa-arrow-left"></i> Back to Schedules
+ </a>
+ </div>
+ </div>
+ <div class="card-body">
+ {% with messages = get_flashed_messages(with_categories=true) %}
+ {% if messages %}
+ {% for category, message in messages %}
+ <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+ {{ message }}
+ <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+ </div>
+ {% endfor %}
+ {% endif %}
+ {% endwith %}
+
+ <form method="post" action="{{ url_for('schedules.add_schedule_post') }}" id="scheduleForm">
+ <div class="row mb-3">
+ <div class="col-md-6">
+ <label for="name" class="form-label">Schedule Name <span class="text-danger">*</span></label>
+ <input type="text" class="form-control" id="name" name="name" required placeholder="e.g., Daily-Backup">
+ <div class="form-text">Name of the schedule, must be unique.</div>
+ </div>
+ <div class="col-md-6">
+ <label for="description" class="form-label">Description</label>
+ <input type="text" class="form-control" id="description" name="description" placeholder="e.g., Daily incremental with weekly full backup">
+ <div class="form-text">Brief description of this schedule's purpose.</div>
+ </div>
+ </div>
+
+ <div class="mb-3">
+ <div class="form-check">
+ <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+ <label class="form-check-label" for="is_active">
+ Active
+ </label>
+ <div class="form-text">Uncheck to create the schedule but keep it inactive.</div>
+ </div>
+ </div>
+
+ <hr>
+
+ <h5 class="mb-3">Run Configurations</h5>
+ <p class="text-muted mb-3">Define when backups should run and at what level.</p>
+
+ <div id="runConfigs">
+ <!-- Initial run configuration -->
+ <div class="run-config" id="run-0">
+ <div class="row">
+ <div class="col-md-11">
+ <div class="row mb-3">
+ <div class="col-md-4">
+ <label for="level_0" class="form-label">Backup Level <span class="text-danger">*</span></label>
+ <select class="form-select" id="level_0" name="level_0" required>
+ <option value="Full">Full</option>
+ <option value="Differential">Differential</option>
+ <option value="Incremental">Incremental</option>
+ </select>
+ </div>
+ <div class="col-md-4">
+ <label for="day_0" class="form-label">Day <span class="text-danger">*</span></label>
+ <select class="form-select" id="day_0" name="day_0" required>
+ <option value="Monday">Monday</option>
+ <option value="Tuesday">Tuesday</option>
+ <option value="Wednesday">Wednesday</option>
+ <option value="Thursday">Thursday</option>
+ <option value="Friday">Friday</option>
+ <option value="Saturday">Saturday</option>
+ <option value="Sunday">Sunday</option>
+ <option value="Hourly">Hourly</option>
+ <option value="1st">1st Day of Month</option>
+ <option value="January 1">January 1</option>
+ <option value="April 1">April 1</option>
+ <option value="July 1">July 1</option>
+ <option value="October 1">October 1</option>
+ </select>
+ </div>
+ <div class="col-md-4">
+ <label for="time_0" class="form-label">Time <span class="text-danger">*</span></label>
+ <input type="time" class="form-control" id="time_0" name="time_0" required value="20:00">
+ </div>
+ </div>
+ <div class="form-check mb-2">
+ <input class="form-check-input" type="checkbox" id="enabled_0" name="enabled_0" checked>
+ <label class="form-check-label" for="enabled_0">
+ Enabled
+ </label>
+ </div>
+ </div>
+ <div class="col-md-1 d-flex align-items-center justify-content-center">
+ <span class="text-danger remove-run" onclick="removeRun(0)" title="Remove this run configuration">
+ <i class="fas fa-times-circle fa-lg"></i>
+ </span>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <div class="d-grid gap-2 mb-4">
+ <button type="button" class="btn btn-outline-primary" id="addRunBtn">
+ <i class="fas fa-plus"></i> Add Another Run Configuration
+ </button>
+ </div>
+
+ <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+ <button type="reset" class="btn btn-secondary me-md-2">Reset</button>
+ <button type="submit" class="btn btn-primary">Create Schedule</button>
+ </div>
+ </form>
+ </div>
+ </div>
+ </div>
+
+ <div class="col-lg-4">
+ <div class="card shadow mb-4">
+ <div class="card-header py-3">
+ <h6 class="m-0 font-weight-bold text-primary">Schedule Information</h6>
+ </div>
+ <div class="card-body">
+ <p>Schedules define when backup jobs should run and at what level.</p>
+ 
+ <h6 class="font-weight-bold">Backup Levels:</h6>
+ <ul>
+ <li><strong>Full</strong> - Complete backup of all files</li>
+ <li><strong>Differential</strong> - Backup of files changed since the last Full backup</li>
+ <li><strong>Incremental</strong> - Backup of files changed since the last backup of any level</li>
+ </ul>
+ 
+ <h6 class="font-weight-bold">Common Patterns:</h6>
+ <ul>
+ <li>Daily incremental backups on weekdays</li>
+ <li>Weekly full backup on weekends</li>
+ <li>Monthly full backup on the first day of the month</li>
+ <li>Quarterly full backups for archiving</li>
+ </ul>
+ 
+ <h6 class="font-weight-bold">Best Practices:</h6>
+ <ul>
+ <li>Schedule full backups during off-hours</li>
+ <li>Stagger backup times to avoid resource contention</li>
+ <li>Consider bandwidth and storage constraints</li>
+ <li>Include a mix of backup levels for efficiency</li>
+ </ul>
+ 
+ <div class="alert alert-info mt-3">
+ <i class="fas fa-info-circle"></i> You can create multiple run configurations for a single schedule to implement complex backup strategies.
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let runCount = 1;
+
+function removeRun(index) {
+ const element = document.getElementById(`run-${index}`);
+ if (element) {
+ element.remove();
+ }
+}
+
+document.getElementById('addRunBtn').addEventListener('click', function() {
+ const runConfigsDiv = document.getElementById('runConfigs');
+ const newRunDiv = document.createElement('div');
+ newRunDiv.className = 'run-config';
+ newRunDiv.id = `run-${runCount}`;
+ 
+ newRunDiv.innerHTML = `
+ <div class="row">
+ <div class="col-md-11">
+ <div class="row mb-3">
+ <div class="col-md-4">
+ <label for="level_${runCount}" class="form-label">Backup Level <span class="text-danger">*</span></label>
+ <select class="form-select" id="level_${runCount}" name="level_${runCount}" required>
+ <option value="Full">Full</option>
+ <option value="Differential">Differential</option>
+ <option value="Incremental">Incremental</option>
+ </select>
+ </div>
+ <div class="col-md-4">
+ <label for="day_${runCount}" class="form-label">Day <span class="text-danger">*</span></label>
+ <select class="form-select" id="day_${runCount}" name="day_${runCount}" required>
+ <option value="Monday">Monday</option>
+ <option value="Tuesday">Tuesday</option>
+ <option value="Wednesday">Wednesday</option>
+ <option value="Thursday">Thursday</option>
+ <option value="Friday">Friday</option>
+ <option value="Saturday">Saturday</option>
+ <option value="Sunday">Sunday</option>
+ <option value="Hourly">Hourly</option>
+ <option value="1st">1st Day of Month</option>
+ <option value="January 1">January 1</option>
+ <option value="April 1">April 1</option>
+ <option value="July 1">July 1</option>
+ <option value="October 1">October 1</option>
+ </select>
+ </div>
+ <div class="col-md-4">
+ <label for="time_${runCount}" class="form-label">Time <span class="text-danger">*</span></label>
+ <input type="time" class="form-control" id="time_${runCount}" name="time_${runCount}" required value="20:00">
+ </div>
+ </div>
+ <div class="form-check mb-2">
+ <input class="form-check-input" type="checkbox" id="enabled_${runCount}" name="enabled_${runCount}" checked>
+ <label class="form-check-label" for="enabled_${runCount}">
+ Enabled
+ </label>
+ </div>
+ </div>
+ <div class="col-md-1 d-flex align-items-center justify-content-center">
+ <span class="text-danger remove-run" onclick="removeRun(${runCount})" title="Remove this run configuration">
+ <i class="fas fa-times-circle fa-lg"></i>
+ </span>
+ </div>
+ </div>
+ `;
+ 
+ runConfigsDiv.appendChild(newRunDiv);
+ runCount++;
+});
+</script>
+{% endblock %}

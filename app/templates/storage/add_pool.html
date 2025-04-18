@@ -1,0 +1,239 @@
+<!-- app/templates/pools/add_pool.html -->
+{% extends 'base.html' %}
+
+{% block title %}Add Pool - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Add New Pool</h1>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Pool Configuration</h6>
+                    <div>
+                        <a href="{{ url_for('pools.index') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Back to Pools
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="post" action="{{ url_for('pools.add_pool') }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Pool Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" required placeholder="e.g., Full-Backups">
+                                <div class="form-text">Name of the pool, must be unique.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="pool_type" class="form-label">Pool Type <span class="text-danger">*</span></label>
+                                <select class="form-select" id="pool_type" name="pool_type" required>
+                                    <option value="Backup">Backup</option>
+                                    <option value="Archive">Archive</option>
+                                    <option value="Scratch">Scratch</option>
+                                    <option value="Clone">Clone</option>
+                                </select>
+                                <div class="form-text">Type of pool determines its usage.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="storage" class="form-label">Storage <span class="text-danger">*</span></label>
+                                <select class="form-select" id="storage" name="storage" required>
+                                    {% for storage in storages %}
+                                    <option value="{{ storage.name }}">{{ storage.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Storage device where volumes will be created.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="label_format" class="form-label">Label Format</label>
+                                <input type="text" class="form-control" id="label_format" name="label_format" placeholder="e.g., Full-${Year}-${Month}">
+                                <div class="form-text">Format for volume labels. Variables: ${Year}, ${Month}, ${Day}, ${JobId}</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="max_volumes" class="form-label">Maximum Volumes</label>
+                                <input type="number" class="form-control" id="max_volumes" name="max_volumes" value="100" min="1">
+                                <div class="form-text">Maximum number of volumes to create in this pool.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="volume_retention" class="form-label">Volume Retention <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="volume_retention" name="volume_retention" value="30" min="1" required>
+                                    <select class="form-select" id="retention_unit" name="retention_unit">
+                                        <option value="days">Days</option>
+                                        <option value="weeks">Weeks</option>
+                                        <option value="months">Months</option>
+                                        <option value="years">Years</option>
+                                    </select>
+                                </div>
+                                <div class="form-text">How long to keep volumes before recycling.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="max_volume_jobs" class="form-label">Max Jobs Per Volume</label>
+                                <input type="number" class="form-control" id="max_volume_jobs" name="max_volume_jobs" value="1" min="1">
+                                <div class="form-text">Maximum number of jobs to write to each volume.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="max_volume_bytes" class="form-label">Max Volume Size (GB)</label>
+                                <input type="number" class="form-control" id="max_volume_bytes" name="max_volume_bytes" value="5" min="1" step="0.1">
+                                <div class="form-text">Maximum size of each volume in gigabytes.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="recycle" class="form-label">Recycle</label>
+                                <select class="form-select" id="recycle" name="recycle">
+                                    <option value="yes">Yes</option>
+                                    <option value="no">No</option>
+                                </select>
+                                <div class="form-text">Whether to recycle volumes after retention period.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="auto_prune" class="form-label">Auto Prune</label>
+                                <select class="form-select" id="auto_prune" name="auto_prune">
+                                    <option value="yes">Yes</option>
+                                    <option value="no">No</option>
+                                </select>
+                                <div class="form-text">Automatically prune expired volumes.</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" placeholder="Enter pool description..."></textarea>
+                            <div class="form-text">Optional description for this pool.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="create_volumes" name="create_volumes">
+                                <label class="form-check-label" for="create_volumes">
+                                    Create initial volumes
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="volumeOptions" class="mb-3 border p-3 rounded bg-light d-none">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="volume_count" class="form-label">Number of Volumes</label>
+                                    <input type="number" class="form-control" id="volume_count" name="volume_count" value="5" min="1">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="volume_prefix" class="form-label">Volume Name Prefix</label>
+                                    <input type="text" class="form-control" id="volume_prefix" name="volume_prefix" placeholder="e.g., Full-">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="reset" class="btn btn-secondary me-md-2">Reset</button>
+                            <button type="submit" class="btn btn-primary">Create Pool</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Pool Information</h6>
+                </div>
+                <div class="card-body">
+                    <p>A pool is a logical container for volumes where your backup data is stored. Properly configuring pools is essential for effective backup management.</p>
+                    
+                    <h6 class="font-weight-bold">Common Pool Types:</h6>
+                    <ul>
+                        <li><strong>Backup:</strong> For regular backup jobs</li>
+                        <li><strong>Archive:</strong> For long-term storage</li>
+                        <li><strong>Scratch:</strong> For temporary or reusable volumes</li>
+                        <li><strong>Clone:</strong> For creating copies of other volumes</li>
+                    </ul>
+                    
+                    <h6 class="font-weight-bold">Best Practices:</h6>
+                    <ul>
+                        <li>Create separate pools for different backup types (full, incremental, etc.)</li>
+                        <li>Set appropriate retention periods based on your backup strategy</li>
+                        <li>Monitor pool usage to prevent running out of space</li>
+                        <li>Regularly verify that recycling and pruning are working correctly</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const createVolumesCheckbox = document.getElementById('create_volumes');
+    const volumeOptionsDiv = document.getElementById('volumeOptions');
+    
+    // Toggle volume options visibility based on checkbox
+    createVolumesCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            volumeOptionsDiv.classList.remove('d-none');
+        } else {
+            volumeOptionsDiv.classList.add('d-none');
+        }
+    });
+    
+    // Update label format based on pool type
+    const poolTypeSelect = document.getElementById('pool_type');
+    const labelFormatInput = document.getElementById('label_format');
+    const volumePrefixInput = document.getElementById('volume_prefix');
+    
+    poolTypeSelect.addEventListener('change', function() {
+        const poolType = this.value;
+        let prefix = '';
+        
+        switch (poolType) {
+            case 'Backup':
+                prefix = 'Backup-';
+                labelFormatInput.value = prefix + '${Year}${Month}';
+                break;
+            case 'Archive':
+                prefix = 'Archive-';
+                labelFormatInput.value = prefix + '${Year}${Month}';
+                break;
+            case 'Scratch':
+                prefix = 'Scratch-';
+                labelFormatInput.value = prefix + '${JobId}';
+                break;
+            case 'Clone':
+                prefix = 'Clone-';
+                labelFormatInput.value = prefix + '${Year}${Month}';
+                break;
+        }
+        
+        volumePrefixInput.value = prefix;
+    });
+    
+    // Trigger initial change to set default values
+    poolTypeSelect.dispatchEvent(new Event('change'));
+});
+</script>
+{% endblock %}

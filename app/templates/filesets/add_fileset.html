@@ -1,0 +1,133 @@
+<!-- app/templates/filesets/add_fileset.html -->
+{% extends 'base.html' %}
+
+{% block title %}Add FileSet - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Add New FileSet</h1>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">FileSet Configuration</h6>
+                    <div>
+                        <a href="{{ url_for('filesets.index') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Back to FileSets
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="post" action="{{ url_for('filesets.add_fileset_post') }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">FileSet Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" required placeholder="e.g., System-Backup">
+                                <div class="form-text">Name of the FileSet, must be unique.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="description" class="form-label">Description</label>
+                                <input type="text" class="form-control" id="description" name="description" placeholder="e.g., System configuration files backup">
+                                <div class="form-text">Brief description of what this FileSet includes.</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="include_paths" class="form-label">Include Paths <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="include_paths" name="include_paths" rows="5" required placeholder="/etc
+/home
+/var/www
+/usr/local/etc"></textarea>
+                            <div class="form-text">Enter one path per line. These paths will be included in the backup.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="exclude_paths" class="form-label">Exclude Paths</label>
+                            <textarea class="form-control" id="exclude_paths" name="exclude_paths" rows="5" placeholder="*.tmp
+*.log
+/home/*/tmp
+/var/cache"></textarea>
+                            <div class="form-text">Enter one path per line. These paths will be excluded from the backup.</div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="signature" class="form-label">Signature <span class="text-danger">*</span></label>
+                                <select class="form-select" id="signature" name="signature" required>
+                                    <option value="MD5">MD5</option>
+                                    <option value="SHA1">SHA1</option>
+                                    <option value="SHA256">SHA256</option>
+                                    <option value="SHA512">SHA512</option>
+                                </select>
+                                <div class="form-text">Signature algorithm used for file verification.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" type="checkbox" id="compression" name="compression" checked>
+                                    <label class="form-check-label" for="compression">
+                                        Enable Compression
+                                    </label>
+                                    <div class="form-text">Compress files during backup to save space.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="reset" class="btn btn-secondary me-md-2">Reset</button>
+                            <button type="submit" class="btn btn-primary">Create FileSet</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">FileSet Information</h6>
+                </div>
+                <div class="card-body">
+                    <p>FileSets define which files should be included in or excluded from a backup job.</p>
+                    
+                    <h6 class="font-weight-bold">Include Paths:</h6>
+                    <ul>
+                        <li>Specify directories and files to be backed up</li>
+                        <li>Use absolute paths for clarity</li>
+                        <li>Use wildcards for pattern matching</li>
+                    </ul>
+                    
+                    <h6 class="font-weight-bold">Exclude Paths:</h6>
+                    <ul>
+                        <li>Specify files or directories to skip</li>
+                        <li>Common excludes: temporary files, logs, caches</li>
+                        <li>Use patterns like <code>*.tmp</code> or <code>/home/*/cache</code></li>
+                    </ul>
+                    
+                    <h6 class="font-weight-bold">Wildcards:</h6>
+                    <ul>
+                        <li><code>*</code> - matches any sequence of characters</li>
+                        <li><code>?</code> - matches any single character</li>
+                        <li><code>[...]</code> - matches any character in the brackets</li>
+                    </ul>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle"></i> Well-designed FileSets can significantly improve backup performance by excluding unnecessary files.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

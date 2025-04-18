@@ -1,0 +1,90 @@
+<!-- app/templates/config/console.html -->
+{% extends 'base.html' %}
+
+{% block title %}Bacula Console - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Bacula Console</h1>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Console Command</h6>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" name="command" placeholder="Enter bconsole command..." required>
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="submit">Execute</button>
+                    </div>
+                </div>
+            </form>
+            
+            {% if result %}
+            <div class="mt-4">
+                <h5>Command Output:</h5>
+                <pre class="bg-light p-3" style="max-height: 500px; overflow-y: auto;">{{ result }}</pre>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Common Commands</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Status Commands</h5>
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            status director
+                            <button class="btn btn-sm btn-outline-primary copy-cmd">Copy</button>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            status client=client-name
+                            <button class="btn btn-sm btn-outline-primary copy-cmd">Copy</button>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            status storage=storage-name
+                            <button class="btn btn-sm btn-outline-primary copy-cmd">Copy</button>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="col-md-6">
+                    <h5>List Commands</h5>
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            list jobs
+                            <button class="btn btn-sm btn-outline-primary copy-cmd">Copy</button>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            list clients
+                            <button class="btn btn-sm btn-outline-primary copy-cmd">Copy</button>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            list pools
+                            <button class="btn btn-sm btn-outline-primary copy-cmd">Copy</button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('.copy-cmd').click(function() {
+        var command = $(this).parent().text().trim();
+        command = command.replace('Copy', '').trim();
+        $('input[name="command"]').val(command);
+    });
+});
+</script>
+{% endblock %}

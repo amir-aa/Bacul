@@ -1,0 +1,129 @@
+<!-- app/templates/schedules/export_schedule.html -->
+{% extends 'base.html' %}
+
+{% block title %}Export Schedule: {{ schedule.name }} - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+ <h1 class="h3 mb-4 text-gray-800">Export Schedule: {{ schedule.name }}</h1>
+
+ <div class="row">
+ <div class="col-lg-8">
+ <div class="card shadow mb-4">
+ <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+ <h6 class="m-0 font-weight-bold text-primary">Bacula Configuration</h6>
+ <div>
+ <a href="{{ url_for('schedules.detail', schedule_id=schedule.scheduleid) }}" class="btn btn-secondary btn-sm">
+ <i class="fas fa-arrow-left"></i> Back to Schedule
+ </a>
+ </div>
+ </div>
+ <div class="card-body">
+ <div class="alert alert-info mb-4">
+ <i class="fas fa-info-circle"></i> This is the Bacula configuration for the Schedule. You can copy this to your Bacula Director configuration file.
+ </div>
+ 
+ <div class="card bg-light">
+ <div class="card-body">
+ <pre class="mb-0"><code>{{ config }}</code></pre>
+ </div>
+ </div>
+ 
+ <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+ <button id="copyBtn" class="btn btn-primary" onclick="copyConfig()">
+ <i class="fas fa-copy"></i> Copy to Clipboard
+ </button>
+ <a href="#" class="btn btn-success" onclick="downloadConfig()">
+ <i class="fas fa-download"></i> Download
+ </a>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <div class="col-lg-4">
+ <div class="card shadow mb-4">
+ <div class="card-header py-3">
+ <h6 class="m-0 font-weight-bold text-primary">Schedule Summary</h6>
+ </div>
+ <div class="card-body">
+ <table class="table table-sm">
+ <tr>
+ <th>Name:</th>
+ <td>{{ schedule.name }}</td>
+ </tr>
+ <tr>
+ <th>Description:</th>
+ <td>{{ schedule.description }}</td>
+ </tr>
+ <tr>
+ <th>Status:</th>
+ <td>
+ {% if schedule.is_active %}
+ <span class="badge bg-success">Active</span>
+ {% else %}
+ <span class="badge bg-secondary">Inactive</span>
+ {% endif %}
+ </td>
+ </tr>
+ <tr>
+ <th>Run Configurations:</th>
+ <td>{{ schedule.runs|length }}</td>
+ </tr>
+ </table>
+ 
+ <div class="alert alert-warning mt-3">
+ <i class="fas fa-exclamation-triangle"></i> After adding this configuration to your Bacula Director, remember to reload or restart the service.
+ </div>
+ </div>
+ </div>
+ 
+ <div class="card shadow mb-4">
+ <div class="card-header py-3">
+ <h6 class="m-0 font-weight-bold text-primary">Implementation Steps</h6>
+ </div>
+ <div class="card-body">
+ <ol>
+ <li>Copy the configuration to your clipboard</li>
+ <li>Edit your Bacula Director configuration file (typically <code>/etc/bacula/bacula-dir.conf</code>)</li>
+ <li>Paste the configuration at the appropriate location</li>
+ <li>Validate the configuration with <code>bacula-dir -t</code></li>
+ <li>Reload or restart the Bacula Director service</li>
+ </ol>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyConfig() {
+ const config = `{{ config|replace('\n', '\\n')|safe }}`;
+ navigator.clipboard.writeText(config).then(function() {
+ const copyBtn = document.getElementById('copyBtn');
+ copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+ copyBtn.classList.remove('btn-primary');
+ copyBtn.classList.add('btn-success');
+ setTimeout(function() {
+ copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy to Clipboard';
+ copyBtn.classList.remove('btn-success');
+ copyBtn.classList.add('btn-primary');
+ }, 2000);
+ });
+}
+
+function downloadConfig() {
+ const config = `{{ config|safe }}`;
+ const filename = "{{ schedule.name }}-schedule.conf";
+ const blob = new Blob([config], { type: 'text/plain' });
+ const link = document.createElement('a');
+ link.href = URL.createObjectURL(blob);
+ link.download = filename;
+ document.body.appendChild(link);
+ link.click();
+ document.body.removeChild(link);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,159 @@
+<!-- app/templates/settings/email.html -->
+{% extends 'base.html' %}
+
+{% block title %}Email Settings - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Settings</h1>
+
+    <div class="row">
+        <div class="col-lg-3">
+            <!-- Settings Navigation -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Settings Menu</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('settings.general') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-cog fa-fw mr-2"></i> General
+                        </a>
+                        <a href="{{ url_for('settings.email') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-envelope fa-fw mr-2"></i> Email
+                        </a>
+                        <a href="{{ url_for('settings.backup') }}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-save fa-fw mr-2"></i> Backup
+                        </a>
+                        <a href="{{ url_for('settings.restore') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-undo fa-fw mr-2"></i> Restore
+                        </a>
+                        <a href="{{ url_for('settings.security') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-lock fa-fw mr-2"></i> Security
+                        </a>
+
+
+                        <a href="{{ url_for('settings.users') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-users fa-fw mr-2"></i> Users
+                        </a>
+                        <a href="{{ url_for('settings.notifications') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-bell fa-fw mr-2"></i> Notifications
+                        </a>
+
+
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('settings.export') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-export fa-fw mr-2"></i> Export Settings
+                        </a>
+                        <a href="{{ url_for('settings.import_settings') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-import fa-fw mr-2"></i> Import Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-9">
+            <!-- Email Settings Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Email Settings</h6>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form method="post" action="{{ url_for('settings.email') }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="smtp_server" class="form-label">SMTP Server</label>
+                                <input type="text" class="form-control" id="smtp_server" name="smtp_server" value="{{ settings.email.smtp_server }}">
+                                <div class="form-text">Hostname or IP address of your SMTP server.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="smtp_port" class="form-label">SMTP Port</label>
+                                <input type="number" class="form-control" id="smtp_port" name="smtp_port" value="{{ settings.email.smtp_port }}">
+                                <div class="form-text">Port number for SMTP (usually 25, 465, or 587).</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="smtp_user" class="form-label">SMTP Username</label>
+                                <input type="text" class="form-control" id="smtp_user" name="smtp_user" value="{{ settings.email.smtp_user }}">
+                                <div class="form-text">Username for SMTP authentication.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="smtp_password" class="form-label">SMTP Password</label>
+                                <input type="password" class="form-control" id="smtp_password" name="smtp_password" value="{{ settings.email.smtp_password }}">
+                                <div class="form-text">Password for SMTP authentication. Leave unchanged to keep current password.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="from_email" class="form-label">From Email</label>
+                                <input type="email" class="form-control" id="from_email" name="from_email" value="{{ settings.email.from_email }}">
+                                <div class="form-text">Email address to use in the "From" field.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="admin_recipients" class="form-label">Admin Recipients</label>
+                                <input type="text" class="form-control" id="admin_recipients" name="admin_recipients" value="{{ settings.email.admin_recipients }}">
+                                <div class="form-text">Comma-separated list of email addresses to receive admin notifications.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="use_tls" name="use_tls" {% if settings.email.use_tls %}checked{% endif %}>
+                                    <label class="form-check-label" for="use_tls">
+                                        Use TLS/SSL
+                                    </label>
+                                    <div class="form-text">Enable TLS/SSL for secure SMTP connection.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="send_job_report" name="send_job_report" {% if settings.email.send_job_report %}checked{% endif %}>
+                                    <label class="form-check-label" for="send_job_report">
+                                        Send Job Reports
+                                    </label>
+                                    <div class="form-text">Send email reports when jobs complete.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="send_error_only" name="send_error_only" {% if settings.email.send_error_only %}checked{% endif %}>
+                                    <label class="form-check-label" for="send_error_only">
+                                        Only Send on Errors
+                                    </label>
+                                    <div class="form-text">Only send email reports for failed jobs.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <form action="{{ url_for('settings.test_email') }}" method="post" class="me-md-2">
+                                <button type="submit" class="btn btn-info">Test Email</button>
+                            </form>
+                            <button type="reset" class="btn btn-secondary me-md-2">Reset</button>
+                            <button type="submit" class="btn btn-primary">Save Settings</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

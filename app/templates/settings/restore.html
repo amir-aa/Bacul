@@ -1,0 +1,127 @@
+<!-- app/templates/settings/restore.html -->
+{% extends 'base.html' %}
+
+{% block title %}Restore Settings - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Settings</h1>
+
+    <div class="row">
+        <div class="col-lg-3">
+            <!-- Settings Navigation -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Settings Menu</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('settings.general') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-cog fa-fw mr-2"></i> General
+                        </a>
+                        <a href="{{ url_for('settings.email') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-envelope fa-fw mr-2"></i> Email
+                        </a>
+                        <a href="{{ url_for('settings.backup') }}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-save fa-fw mr-2"></i> Backup
+                        </a>
+                        <a href="{{ url_for('settings.restore') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-undo fa-fw mr-2"></i> Restore
+                        </a>
+                        <a href="{{ url_for('settings.security') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-lock fa-fw mr-2"></i> Security
+                        </a>
+
+
+                        <a href="{{ url_for('settings.users') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-users fa-fw mr-2"></i> Users
+                        </a>
+                        <a href="{{ url_for('settings.notifications') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-bell fa-fw mr-2"></i> Notifications
+                        </a>
+
+
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('settings.export') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-export fa-fw mr-2"></i> Export Settings
+                        </a>
+                        <a href="{{ url_for('settings.import_settings') }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-file-import fa-fw mr-2"></i> Import Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-9">
+            <!-- Restore Settings Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Restore Settings</h6>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    <form method="post" action="{{ url_for('settings.restore') }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="restore_job_prefix" class="form-label">Restore Job Prefix</label>
+                                <input type="text" class="form-control" id="restore_job_prefix" name="restore_job_prefix" value="{{ settings.restore.restore_job_prefix }}">
+                                <div class="form-text">Prefix for automatically generated restore job names.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="restore_location" class="form-label">Default Restore Location</label>
+                                <input type="text" class="form-control" id="restore_location" name="restore_location" value="{{ settings.restore.restore_location }}">
+                                <div class="form-text">Default directory where files will be restored.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="replace_option" class="form-label">Replace Files Option</label>
+                                <select class="form-select" id="replace_option" name="replace_option">
+                                    <option value="always" {% if settings.restore.replace_option == 'always' %}selected{% endif %}>Always</option>
+                                    <option value="never" {% if settings.restore.replace_option == 'never' %}selected{% endif %}>Never</option>
+                                    <option value="ifolder" {% if settings.restore.replace_option == 'ifolder' %}selected{% endif %}>If Older</option>
+                                    <option value="ifnewer" {% if settings.restore.replace_option == 'ifnewer' %}selected{% endif %}>If Newer</option>
+                                </select>
+                                <div class="form-text">When to replace existing files during restore.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="max_concurrent_restores" class="form-label">Max Concurrent Restores</label>
+                                <input type="number" class="form-control" id="max_concurrent_restores" name="max_concurrent_restores" value="{{ settings.restore.max_concurrent_restores }}" min="1">
+                                <div class="form-text">Maximum number of restore jobs that can run simultaneously.</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="client_restore_privileges" name="client_restore_privileges" {% if settings.restore.client_restore_privileges %}checked{% endif %}>
+                                    <label class="form-check-label" for="client_restore_privileges">
+                                        Client Restore Privileges
+                                    </label>
+                                    <div class="form-text">Allow clients to restore their own files.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="reset" class="btn btn-secondary me-md-2">Reset</button>
+                            <button type="submit" class="btn btn-primary">Save Settings</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
