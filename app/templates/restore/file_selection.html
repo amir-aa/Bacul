@@ -1,0 +1,213 @@
+<!-- app/templates/restore/file_selection.html -->
+{% extends 'base.html' %}
+
+{% block title %}Select Files to Restore - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Select Files to Restore</h1>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">File Selection</h6>
+            <div>
+                <a href="{{ url_for('restore.index') }}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Back to Parameters
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="alert alert-info mb-4">
+                <i class="fas fa-info-circle"></i> 
+                <strong>Restore Information:</strong><br>
+                Client: <strong>{{ client_name }}</strong><br>
+                Job ID: <strong>{{ job_id }}</strong><br>
+                Select files to restore and specify the restore location.
+            </div>
+            
+            <form method="post" action="{{ url_for('restore.file_selection') }}" id="restoreForm">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card mb-4">
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">Available Files</h6>
+                                <div>
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" class="form-control" id="fileSearch" placeholder="Search files...">
+                                        <button class="btn btn-primary" type="button" id="searchBtn">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="file-browser mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAll">
+                                        <label class="form-check-label" for="selectAll">
+                                            <strong>Select All Files</strong>
+                                        </label>
+                                    </div>
+                                    <hr>
+                                    <div class="file-list" style="max-height: 500px; overflow-y: auto;">
+                                        {% if files %}
+                                            {% for file in files %}
+                                                <div class="form-check file-item">
+                                                    <input class="form-check-input file-checkbox" type="checkbox" name="files[]" value="{{ file }}" id="file{{ loop.index }}">
+                                                    <label class="form-check-label" for="file{{ loop.index }}">
+                                                        {% if file.endswith('/') %}
+                                                            <i class="fas fa-folder text-warning"></i>
+                                                        {% else %}
+                                                            <i class="fas fa-file text-primary"></i>
+                                                        {% endif %}
+                                                        {{ file }}
+                                                    </label>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <div class="alert alert-warning">
+                                                No files found in this backup job.
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="card mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Restore Options</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group mb-3">
+                                    <label for="restore_location"><strong>Restore Location</strong></label>
+                                    <input type="text" class="form-control" id="restore_location" name="restore_location" value="/tmp/bacula-restore" required>
+                                    <div class="form-text">
+                                        Specify where to restore the files. Use original location or a new path.
+                                    </div>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="useOriginalPath" checked>
+                                    <label class="form-check-label" for="useOriginalPath">
+                                        Restore to original location
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="overwriteExisting">
+                                    <label class="form-check-label" for="overwriteExisting">
+                                        Overwrite existing files
+                                    </label>
+                                </div>
+                                
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>Warning:</strong> Restoring to the original location may overwrite existing files.
+                                </div>
+                                
+                                <div class="selected-files-count mb-3">
+                                    <strong>Selected Files:</strong> <span id="selectedCount">0</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg" id="startRestoreBtn" disabled>
+                                <i class="fas fa-play"></i> Start Restore
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Handle select all checkbox
+    $('#selectAll').change(function() {
+        $('.file-checkbox').prop('checked', $(this).prop('checked'));
+        updateSelectedCount();
+        updateRestoreButton();
+    });
+    
+    // Handle individual file checkbox changes
+    $('.file-checkbox').change(function() {
+        updateSelectedCount();
+        updateRestoreButton();
+    });
+    
+    // Handle restore location options
+    $('#useOriginalPath').change(function() {
+        if ($(this).prop('checked')) {
+            $('#restore_location').val('/');
+        } else {
+            $('#restore_location').val('/tmp/bacula-restore');
+        }
+    });
+    
+    // File search functionality
+    $('#searchBtn').click(function() {
+        searchFiles();
+    });
+    
+    $('#fileSearch').keyup(function(e) {
+        if (e.keyCode === 13) {
+            searchFiles();
+        }
+    });
+    
+    // Update the selected files count
+    function updateSelectedCount() {
+        const count = $('.file-checkbox:checked').length;
+        $('#selectedCount').text(count);
+    }
+    
+    // Enable/disable the restore button based on selection
+    function updateRestoreButton() {
+        const hasSelection = $('.file-checkbox:checked').length > 0;
+        $('#startRestoreBtn').prop('disabled', !hasSelection);
+    }
+    
+    // Search files function
+    function searchFiles() {
+        const searchTerm = $('#fileSearch').val().toLowerCase();
+        
+        $('.file-item').each(function() {
+            const fileName = $(this).find('label').text().toLowerCase();
+            if (fileName.includes(searchTerm)) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    }
+    
+    // Form submission confirmation
+    $('#restoreForm').submit(function(e) {
+        const useOriginal = $('#useOriginalPath').prop('checked');
+        
+        if (useOriginal) {
+            return confirm('You are about to restore files to their original location. This may overwrite existing files. Are you sure you want to continue?');
+        }
+    });
+});
+</script>
+{% endblock %}

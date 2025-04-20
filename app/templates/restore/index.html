@@ -1,0 +1,139 @@
+<!-- app/templates/restore/index.html -->
+{% extends 'base.html' %}
+
+{% block title %}Restore Files - Bacula Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Restore Files</h1>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Select Restore Parameters</h6>
+        </div>
+        <div class="card-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="post" action="{{ url_for('restore.index') }}">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="client_name"><strong>Client</strong></label>
+                            <select class="form-control" id="client_name" name="client_name" required>
+                                <option value="">-- Select Client --</option>
+                                {% for client in clients %}
+                                    <option value="{{ client.name }}">{{ client.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select the client to restore files from</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="fileset_name"><strong>FileSet</strong></label>
+                            <select class="form-control" id="fileset_name" name="fileset_name">
+                                <option value="">-- Select FileSet --</option>
+                                {% for fileset in filesets %}
+                                    <option value="{{ fileset.fileset }}">{{ fileset.fileset }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Optional: Filter jobs by FileSet</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="job_id"><strong>Backup Job</strong></label>
+                            <select class="form-control" id="job_id" name="job_id" required disabled>
+                                <option value="">-- Select Client First --</option>
+                            </select>
+                            <div class="form-text">Select the backup job to restore from</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Select a client and backup job to restore files from. You will be able to select specific files in the next step.
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary" id="continueBtn" disabled>
+                        Continue to File Selection <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Enable/disable the job selection based on client selection
+    $('#client_name').change(function() {
+        const clientName = $(this).val();
+        const jobSelect = $('#job_id');
+        
+        if (clientName) {
+            // Clear and disable job selection while loading
+            jobSelect.empty().prop('disabled', true).append('<option value="">Loading jobs...</option>');
+            
+            // Fetch jobs for the selected client
+            $.getJSON("{{ url_for('restore.get_jobs', client_name='') }}" + clientName, function(data) {
+                jobSelect.empty().prop('disabled', false);
+                jobSelect.append('<option value="">-- Select Backup Job --</option>');
+                
+                if (data.length === 0) {
+                    jobSelect.append('<option value="" disabled>No backup jobs found for this client</option>');
+                } else {
+                    // Add jobs to the dropdown
+                    $.each(data, function(index, job) {
+                        const levelText = job.level === 'F' ? 'Full' : 
+                                         job.level === 'I' ? 'Incremental' : 
+                                         job.level === 'D' ? 'Differential' : job.level;
+                        
+                        jobSelect.append(
+                            $('<option></option>')
+                                .val(job.jobid)
+                                .text(`Job ${job.jobid} - ${job.name} (${levelText}) - ${job.starttime}`)
+                        );
+                    });
+                }
+                
+                // Update the continue button state
+                updateContinueButton();
+            });
+        } else {
+            // Reset job selection if no client is selected
+            jobSelect.empty().prop('disabled', true);
+            jobSelect.append('<option value="">-- Select Client First --</option>');
+            updateContinueButton();
+        }
+    });
+    
+    // Enable/disable continue button based on selections
+    $('#job_id').change(function() {
+        updateContinueButton();
+    });
+    
+    function updateContinueButton() {
+        const clientName = $('#client_name').val();
+        const jobId = $('#job_id').val();
+        
+        // Enable the continue button only if both client and job are selected
+        $('#continueBtn').prop('disabled', !(clientName && jobId));
+    }
+});
+</script>
+{% endblock %}
