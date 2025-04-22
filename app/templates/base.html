@@ -140,6 +140,19 @@
             color: white;
         }
         
+        /* Dropdown menu arrow */
+        .nav-item .nav-link[data-bs-toggle="collapse"]::after {
+            content: '\f105';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            margin-left: auto;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-item .nav-link[data-bs-toggle="collapse"][aria-expanded="true"]::after {
+            transform: rotate(90deg);
+        }
+        
         /* Topbar Styling */
         .topbar {
             box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
@@ -223,6 +236,8 @@
             border-radius: 5px;
             white-space: nowrap;
             transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
         }
         
         .collapse-item:hover {
@@ -273,6 +288,22 @@
             height: 0.75rem;
             border-radius: 100%;
             border: 2px solid white;
+        }
+        
+        /* Fix for Bootstrap 5 dropdown menus */
+        .dropdown-menu {
+            margin-top: 0.5rem !important;
+        }
+        
+        /* Fix for dropdown items alignment */
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Fix for spacing in dropdown items */
+        .dropdown-item i {
+            margin-right: 0.5rem;
         }
     </style>
     
@@ -396,9 +427,8 @@
                 <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseSettings" aria-expanded="false" aria-controls="collapseSettings">
                     <i class="fas fa-fw fa-cog"></i>
                     <span>Settings</span>
-                    <i class="fas fa-angle-right ms-auto"></i>
                 </a>
-                <div id="collapseSettings" class="collapse" aria-labelledby="headingSettings" data-parent="#accordionSidebar">
+                <div id="collapseSettings" class="collapse" aria-labelledby="headingSettings" data-bs-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Settings:</h6>
                         <a class="collapse-item" href="{{ url_for('settings.general') }}">
@@ -531,7 +561,7 @@
                                 <span class="badge bg-danger badge-counter">3+</span>
                             </a>
                             <!-- Dropdown - Alerts -->
-                            <div class="dropdown-list dropdown-menu dropdown-menu-end shadow animated--grow-in" aria-labelledby="alertsDropdown">
+                            <div class="dropdown-menu dropdown-menu-end shadow animated--grow-in" aria-labelledby="alertsDropdown">
                                 <h6 class="dropdown-header">
                                     Alerts Center
                                 </h6>
@@ -580,7 +610,7 @@
                                 <span class="badge bg-danger badge-counter">7</span>
                             </a>
                             <!-- Dropdown - Messages -->
-                            <div class="dropdown-list dropdown-menu dropdown-menu-end shadow animated--grow-in" aria-labelledby="messagesDropdown">
+                            <div class="dropdown-menu dropdown-menu-end shadow animated--grow-in" aria-labelledby="messagesDropdown">
                                 <h6 class="dropdown-header">
                                     Message Center
                                 </h6>
@@ -730,6 +760,34 @@
             if (windowWidth < 768) {
                 document.body.classList.add('sidebar-toggled');
                 document.querySelector('.sidebar').classList.add('toggled');
+            }
+            
+            // Initialize all dropdowns
+            var dropdownElementList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'))
+            var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+                return new bootstrap.Dropdown(dropdownToggleEl)
+            });
+            
+            // Initialize all collapses
+            var collapseElementList = [].slice.call(document.querySelectorAll('[data-bs-toggle="collapse"]'))
+            var collapseList = collapseElementList.map(function (collapseToggleEl) {
+                return new bootstrap.Collapse(collapseToggleEl, {
+                    toggle: false
+                });
+            });
+            
+            // Fix for settings dropdown arrow rotation
+            const settingsLink = document.querySelector('[data-bs-target="#collapseSettings"]');
+            const collapseSettings = document.querySelector('#collapseSettings');
+            
+            if (settingsLink && collapseSettings) {
+                collapseSettings.addEventListener('show.bs.collapse', function () {
+                    settingsLink.setAttribute('aria-expanded', 'true');
+                });
+                
+                collapseSettings.addEventListener('hide.bs.collapse', function () {
+                    settingsLink.setAttribute('aria-expanded', 'false');
+                });
             }
         });
     </script>
